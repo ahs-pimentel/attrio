@@ -83,6 +83,32 @@ export class UpdateAgendaItemDto {
   result?: string;
 }
 
+export class VoteResultDto {
+  @ApiProperty()
+  yes: number;
+
+  @ApiProperty()
+  no: number;
+
+  @ApiProperty()
+  abstention: number;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ description: 'Votos ponderados a favor' })
+  weightedYes: number;
+
+  @ApiProperty({ description: 'Votos ponderados contra' })
+  weightedNo: number;
+
+  @ApiProperty({ description: 'Votos ponderados abstencao' })
+  weightedAbstention: number;
+
+  @ApiProperty({ description: 'Total de peso dos votos' })
+  weightedTotal: number;
+}
+
 export class AgendaItemDetailResponseDto {
   @ApiProperty()
   id: string;
@@ -125,30 +151,4 @@ export class AgendaItemDetailResponseDto {
 
   @ApiPropertyOptional()
   voteResult?: VoteResultDto;
-}
-
-export class VoteResultDto {
-  @ApiProperty()
-  yes: number;
-
-  @ApiProperty()
-  no: number;
-
-  @ApiProperty()
-  abstention: number;
-
-  @ApiProperty()
-  total: number;
-
-  @ApiProperty({ description: 'Votos ponderados a favor' })
-  weightedYes: number;
-
-  @ApiProperty({ description: 'Votos ponderados contra' })
-  weightedNo: number;
-
-  @ApiProperty({ description: 'Votos ponderados abstencao' })
-  weightedAbstention: number;
-
-  @ApiProperty({ description: 'Total de peso dos votos' })
-  weightedTotal: number;
 }
