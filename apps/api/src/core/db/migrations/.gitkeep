@@ -1,0 +1,2 @@
+# Pasta para migrations do TypeORM
+# Nunca use synchronize: true

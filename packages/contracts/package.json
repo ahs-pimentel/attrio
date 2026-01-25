@@ -1,0 +1,16 @@
+{
+  "name": "@attrio/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contratos e tipos compartilhados do Attrio",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

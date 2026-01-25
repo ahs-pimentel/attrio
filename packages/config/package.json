@@ -1,0 +1,11 @@
+{
+  "name": "@attrio/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configuracoes compartilhadas do Attrio",
+  "main": "index.js",
+  "files": [
+    "eslint",
+    "typescript"
+  ]
+}

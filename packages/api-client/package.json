@@ -1,0 +1,19 @@
+{
+  "name": "@attrio/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cliente HTTP para a API do Attrio",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@attrio/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

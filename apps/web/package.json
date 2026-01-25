@@ -1,0 +1,27 @@
+{
+  "name": "@attrio/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frontend do Attrio - Next.js",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.42.0",
+    "next": "^14.1.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.1.3",
+    "typescript": "^5.3.3"
+  }
+}
