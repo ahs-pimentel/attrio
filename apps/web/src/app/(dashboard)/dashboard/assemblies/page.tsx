@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useAuthContext } from '@/components/AuthProvider';
 import { assembliesApi, AssemblyResponse } from '@/lib/api';
 
 export default function AssembliesPage() {
+  const { isSyndic } = useAuthContext();
   const [assemblies, setAssemblies] = useState<AssemblyResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,11 +128,15 @@ export default function AssembliesPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Assembleias</h1>
-          <p className="text-gray-600">Gerencie as assembleias do condominio</p>
+          <p className="text-gray-600">
+            {isSyndic ? 'Gerencie as assembleias do condominio' : 'Acompanhe as assembleias do condominio'}
+          </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : 'Nova Assembleia'}
-        </Button>
+        {isSyndic && (
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancelar' : 'Nova Assembleia'}
+          </Button>
+        )}
       </div>
 
       {error && (
@@ -139,7 +145,7 @@ export default function AssembliesPage() {
         </div>
       )}
 
-      {showForm && (
+      {isSyndic && showForm && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Nova Assembleia</CardTitle>
@@ -269,44 +275,46 @@ export default function AssembliesPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    {assembly.status === 'SCHEDULED' && (
-                      <>
+                  {isSyndic && (
+                    <div className="flex items-center gap-2 ml-4">
+                      {assembly.status === 'SCHEDULED' && (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleStart(assembly.id)}
+                          >
+                            Iniciar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCancel(assembly.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        </>
+                      )}
+                      {assembly.status === 'IN_PROGRESS' && (
                         <Button
-                          variant="primary"
+                          variant="secondary"
                           size="sm"
-                          onClick={() => handleStart(assembly.id)}
+                          onClick={() => handleFinish(assembly.id)}
                         >
-                          Iniciar
+                          Encerrar
                         </Button>
+                      )}
+                      {(assembly.status === 'CANCELLED' || assembly.status === 'FINISHED') && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCancel(assembly.id)}
+                          onClick={() => handleDelete(assembly.id)}
                         >
-                          Cancelar
+                          Excluir
                         </Button>
-                      </>
-                    )}
-                    {assembly.status === 'IN_PROGRESS' && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleFinish(assembly.id)}
-                      >
-                        Encerrar
-                      </Button>
-                    )}
-                    {(assembly.status === 'CANCELLED' || assembly.status === 'FINISHED') && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(assembly.id)}
-                      >
-                        Excluir
-                      </Button>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

@@ -22,6 +22,7 @@ export default function ResidentsPage() {
     phone: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -50,7 +51,9 @@ export default function ResidentsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await invitesApi.create(inviteFormData);
+      const invite = await invitesApi.create(inviteFormData);
+      const link = `${window.location.origin}/register/${invite.token}`;
+      setCreatedInviteLink(link);
       setInviteFormData({ unitId: '', name: '', email: '', phone: '' });
       setShowInviteForm(false);
       await loadData();
@@ -59,6 +62,18 @@ export default function ResidentsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCopyLink = async (link?: string) => {
+    const linkToCopy = link || createdInviteLink;
+    if (linkToCopy) {
+      await navigator.clipboard.writeText(linkToCopy);
+      alert('Link copiado para a area de transferencia!');
+    }
+  };
+
+  const getInviteLink = (token: string) => {
+    return `${window.location.origin}/register/${token}`;
   };
 
   const handleResendInvite = async (id: string) => {
@@ -141,7 +156,40 @@ export default function ResidentsPage() {
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
+          <button
+            onClick={() => setError(null)}
+            className="ml-4 text-red-500 hover:text-red-700"
+          >
+            Fechar
+          </button>
         </div>
+      )}
+
+      {createdInviteLink && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="text-green-800">Convite Criado com Sucesso!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-green-700 mb-3">
+              Compartilhe o link abaixo com o morador para que ele possa completar o cadastro:
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={createdInviteLink}
+                className="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono"
+              />
+              <Button onClick={handleCopyLink} variant="outline">
+                Copiar
+              </Button>
+              <Button onClick={() => setCreatedInviteLink(null)} variant="outline">
+                Fechar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {showInviteForm && (
@@ -355,6 +403,12 @@ export default function ResidentsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-4">
                     {invite.status === 'PENDING' && (
                       <>
+                        <button
+                          onClick={() => handleCopyLink(getInviteLink(invite.token))}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Copiar Link
+                        </button>
                         <button
                           onClick={() => handleResendInvite(invite.id)}
                           className="text-blue-600 hover:text-blue-900"

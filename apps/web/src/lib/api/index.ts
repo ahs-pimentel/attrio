@@ -1,6 +1,9 @@
 // Core client
 export { apiClient, request, ApiClientError, type ApiError } from './client';
 
+// Auth
+export { authApi, type ProfileResponse, type UserRole } from './auth';
+
 // Domain-specific clients
 export { unitsApi, type UnitResponse } from './units';
 

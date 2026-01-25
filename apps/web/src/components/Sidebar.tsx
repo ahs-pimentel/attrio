@@ -4,14 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from './AuthProvider';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Condominios', href: '/dashboard/tenants', icon: OfficeBuildingIcon },
-  { name: 'Unidades', href: '/dashboard/units', icon: BuildingIcon },
-  { name: 'Moradores', href: '/dashboard/residents', icon: UsersIcon },
-  { name: 'Assembleias', href: '/dashboard/assemblies', icon: CalendarIcon },
-];
-
 function HomeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -54,7 +46,27 @@ function OfficeBuildingIcon({ className }: { className?: string }) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuthContext();
+  const { user, signOut, profile, isAdmin, isSyndic } = useAuthContext();
+
+  // Itens de navegação baseados nas permissões
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, show: true },
+    { name: 'Condominios', href: '/dashboard/tenants', icon: OfficeBuildingIcon, show: isAdmin },
+    { name: 'Unidades', href: '/dashboard/units', icon: BuildingIcon, show: isSyndic },
+    { name: 'Moradores', href: '/dashboard/residents', icon: UsersIcon, show: isSyndic },
+    { name: 'Assembleias', href: '/dashboard/assemblies', icon: CalendarIcon, show: true },
+  ].filter(item => item.show);
+
+  const getRoleBadge = () => {
+    if (!profile?.role) return null;
+    const labels: Record<string, string> = {
+      SAAS_ADMIN: 'Admin',
+      SYNDIC: 'Sindico',
+      DOORMAN: 'Porteiro',
+      RESIDENT: 'Morador',
+    };
+    return labels[profile.role] || profile.role;
+  };
 
   return (
     <div className="flex flex-col w-64 bg-gray-900 min-h-screen">
@@ -98,12 +110,19 @@ export function Sidebar() {
             <p className="text-sm font-medium text-white truncate">
               {user?.email || 'Usuario'}
             </p>
-            <button
-              onClick={signOut}
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Sair
-            </button>
+            <div className="flex items-center gap-2">
+              {getRoleBadge() && (
+                <span className="text-xs px-2 py-0.5 bg-blue-600 rounded text-white">
+                  {getRoleBadge()}
+                </span>
+              )}
+              <button
+                onClick={signOut}
+                className="text-xs text-gray-400 hover:text-white transition-colors"
+              >
+                Sair
+              </button>
+            </div>
           </div>
         </div>
       </div>

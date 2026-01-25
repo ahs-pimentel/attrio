@@ -229,5 +229,5 @@ export const invitesApi = {
    * Completa registro de morador (público)
    */
   completeRegistration: (data: CompleteRegistrationDto) =>
-    apiClient.post<ResidentResponse>('/invites/complete-registration', data, { authenticated: false }),
+    apiClient.post<ResidentResponse>('/invites/complete', data, { authenticated: false }),
 };
