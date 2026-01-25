@@ -5,6 +5,13 @@ export { apiClient, request, ApiClientError, type ApiError } from './client';
 export { unitsApi, type UnitResponse } from './units';
 
 export {
+  tenantsApi,
+  type TenantResponse,
+  type CreateTenantDto,
+  type UpdateTenantDto,
+} from './tenants';
+
+export {
   residentsApi,
   invitesApi,
   type ResidentResponse,

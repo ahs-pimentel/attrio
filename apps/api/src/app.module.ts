@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TenantEntity } from './modules/tenants/tenant.entity';
 import { HealthModule } from './modules/health/health.module';
 import {
   AuthModule,
@@ -15,6 +16,7 @@ import { TenantsModule } from './modules/tenants';
 import { UnitsModule } from './modules/units';
 import { ResidentsModule } from './modules/residents';
 import { AssembliesModule } from './modules/assemblies';
+import { SeedModule } from './modules/seed';
 import { getDatabaseConfig } from './core/db/database.config';
 
 @Module({
@@ -32,6 +34,9 @@ import { getDatabaseConfig } from './core/db/database.config';
       useFactory: getDatabaseConfig,
     }),
 
+    // Repositorio global para UserLoaderGuard (guards globais)
+    TypeOrmModule.forFeature([TenantEntity]),
+
     // Modulos da aplicacao
     AuthModule,
     UsersModule,
@@ -40,6 +45,7 @@ import { getDatabaseConfig } from './core/db/database.config';
     ResidentsModule,
     AssembliesModule,
     HealthModule,
+    SeedModule,
   ],
   providers: [
     // Guards globais executam na ordem de declaracao:

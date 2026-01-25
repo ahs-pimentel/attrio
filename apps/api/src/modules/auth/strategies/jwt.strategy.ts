@@ -33,16 +33,16 @@ export interface AuthenticatedUser {
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(configService: ConfigService) {
     const supabaseUrl = configService.get<string>('SUPABASE_URL');
-    const jwksUrl = configService.get<string>('SUPABASE_JWKS_URL');
+    const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
 
-    if (!supabaseUrl || !jwksUrl) {
-      throw new Error('SUPABASE_URL and SUPABASE_JWKS_URL must be defined');
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL must be defined');
     }
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      algorithms: ['RS256'],
+      algorithms: ['ES256'],
       issuer: `${supabaseUrl}/auth/v1`,
       audience: 'authenticated',
       secretOrKeyProvider: passportJwtSecret({

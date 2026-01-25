@@ -12,7 +12,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   // IMPORTANTE: NUNCA usar synchronize: true em producao
   // Usar migrations para todas as alteracoes de schema
-  synchronize: false,
+  synchronize: configService.get<string>('NODE_ENV') === 'development',
   logging: configService.get<string>('NODE_ENV') === 'development',
   // Pool de conexoes
   extra: {
