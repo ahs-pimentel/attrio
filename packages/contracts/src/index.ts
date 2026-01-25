@@ -28,6 +28,37 @@ export enum ResidentStatus {
   INACTIVE = 'INACTIVE',
 }
 
+/** Tipo de morador */
+export enum ResidentType {
+  OWNER = 'OWNER',
+  TENANT = 'TENANT',
+}
+
+/** Status de convite */
+export enum InviteStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  EXPIRED = 'EXPIRED',
+}
+
+/** Tipo de animal de estimacao */
+export enum PetType {
+  DOG = 'DOG',
+  CAT = 'CAT',
+  BIRD = 'BIRD',
+  FISH = 'FISH',
+  OTHER = 'OTHER',
+}
+
+/** Tipo de parentesco */
+export enum RelationshipType {
+  SPOUSE = 'SPOUSE',
+  CHILD = 'CHILD',
+  PARENT = 'PARENT',
+  SIBLING = 'SIBLING',
+  OTHER = 'OTHER',
+}
+
 /** Status de uma assembleia */
 export enum AssemblyStatus {
   SCHEDULED = 'SCHEDULED',

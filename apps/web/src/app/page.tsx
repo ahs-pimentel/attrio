@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuthContext } from '@/components/AuthProvider';
+import { apiClient } from '@/lib/api';
 
 interface HealthStatus {
   status: string;
@@ -9,22 +11,24 @@ interface HealthStatus {
   version: string;
 }
 
+interface UserProfile {
+  id: string;
+  email?: string;
+  isAnonymous: boolean;
+}
+
 export default function Home() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { user, loading: authLoading, signOut } = useAuthContext();
 
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/health`);
-
-        if (!response.ok) {
-          throw new Error('API nao esta respondendo');
-        }
-
-        const data = await response.json();
+        const data = await apiClient.get<HealthStatus>('/health', { authenticated: false });
         setHealth(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -36,12 +40,57 @@ export default function Home() {
     checkHealth();
   }, []);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        try {
+          const data = await apiClient.get<UserProfile>('/auth/profile');
+          setProfile(data);
+        } catch (err) {
+          console.error('Erro ao carregar perfil:', err);
+        }
+      } else {
+        setProfile(null);
+      }
+    };
+
+    if (!authLoading) {
+      fetchProfile();
+    }
+  }, [user, authLoading]);
+
   return (
     <main style={styles.main}>
       <div style={styles.container}>
         <h1 style={styles.title}>Attrio</h1>
         <p style={styles.subtitle}>Plataforma de Gerenciamento de Condominios</p>
 
+        {/* Auth Status */}
+        <div style={styles.card}>
+          <h2 style={styles.cardTitle}>Autenticacao</h2>
+          {authLoading ? (
+            <p style={styles.loading}>Verificando autenticacao...</p>
+          ) : user ? (
+            <div style={styles.success}>
+              <p><strong>Usuario:</strong> {user.email}</p>
+              {profile && (
+                <p><strong>ID no sistema:</strong> {profile.id}</p>
+              )}
+              <button onClick={signOut} style={styles.logoutButton}>
+                Sair
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p style={{ marginBottom: '1rem', color: '#666' }}>Voce nao esta autenticado</p>
+              <a href="/login" style={styles.loginLink}>
+                Entrar / Criar conta
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* API Status */}
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>Status da API</h2>
 
@@ -154,5 +203,25 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     fontWeight: 500,
     transition: 'background 0.2s',
+    textDecoration: 'none',
+  },
+  loginLink: {
+    display: 'inline-block',
+    padding: '0.75rem 1.5rem',
+    background: '#2563eb',
+    color: '#fff',
+    borderRadius: '8px',
+    fontWeight: 500,
+    textDecoration: 'none',
+  },
+  logoutButton: {
+    marginTop: '1rem',
+    padding: '0.5rem 1rem',
+    background: '#dc2626',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 500,
   },
 };

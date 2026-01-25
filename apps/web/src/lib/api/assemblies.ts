@@ -1,0 +1,467 @@
+import { apiClient } from './client';
+import type { AssemblyStatus, AgendaItemStatus, VoteChoice } from '@attrio/contracts';
+
+// ==================== Types ====================
+
+export interface AssemblyResponse {
+  id: string;
+  tenantId: string;
+  title: string;
+  description?: string | null;
+  scheduledAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  meetingUrl?: string | null;
+  status: AssemblyStatus;
+  createdAt: string;
+  updatedAt: string;
+  participantsCount?: number;
+  agendaItemsCount?: number;
+}
+
+export interface AssemblyDetailResponse extends AssemblyResponse {
+  agendaItems?: AgendaItemResponse[];
+  participants?: ParticipantResponse[];
+}
+
+export interface CreateAssemblyDto {
+  title: string;
+  description?: string;
+  scheduledAt: string;
+  meetingUrl?: string;
+}
+
+export interface UpdateAssemblyDto {
+  title?: string;
+  description?: string;
+  scheduledAt?: string;
+  meetingUrl?: string;
+  status?: AssemblyStatus;
+}
+
+export interface AgendaItemResponse {
+  id: string;
+  assemblyId: string;
+  title: string;
+  description?: string | null;
+  orderIndex: number;
+  status: AgendaItemStatus;
+  requiresQuorum: boolean;
+  quorumType: string;
+  votingStartedAt?: string | null;
+  votingEndedAt?: string | null;
+  result?: string | null;
+  createdAt: string;
+}
+
+export interface CreateAgendaItemDto {
+  title: string;
+  description?: string;
+  orderIndex?: number;
+  requiresQuorum?: boolean;
+  quorumType?: 'simple' | 'qualified' | 'unanimous';
+}
+
+export interface UpdateAgendaItemDto {
+  title?: string;
+  description?: string;
+  orderIndex?: number;
+  requiresQuorum?: boolean;
+  quorumType?: string;
+  status?: AgendaItemStatus;
+  result?: string;
+}
+
+export interface ParticipantResponse {
+  id: string;
+  assemblyId: string;
+  unitId: string;
+  residentId?: string | null;
+  proxyName?: string | null;
+  joinedAt?: string | null;
+  leftAt?: string | null;
+  votingWeight: number;
+  createdAt: string;
+  unitIdentifier?: string;
+  residentName?: string;
+}
+
+export interface RegisterParticipantDto {
+  unitId: string;
+  residentId?: string;
+  proxyName?: string;
+  proxyDocument?: string;
+  votingWeight?: number;
+}
+
+export interface VoteResponse {
+  id: string;
+  agendaItemId: string;
+  participantId: string;
+  choice: VoteChoice;
+  votingWeight: number;
+  createdAt: string;
+}
+
+export interface CastVoteDto {
+  choice: VoteChoice;
+}
+
+export interface VoteSummary {
+  yes: number;
+  no: number;
+  abstention: number;
+  total: number;
+  weightedYes: number;
+  weightedNo: number;
+  weightedAbstention: number;
+  weightedTotal: number;
+  yesPercentage: number;
+  noPercentage: number;
+  abstentionPercentage: number;
+}
+
+export interface AttendanceStatus {
+  assemblyId: string;
+  assemblyTitle: string;
+  status: string;
+  totalUnits: number;
+  registeredParticipants: number;
+  checkedIn: number;
+  checkedOut: number;
+  currentlyPresent: number;
+  quorumPercentage: number;
+  totalVotingWeight: number;
+  presentVotingWeight: number;
+}
+
+export interface CheckinRequest {
+  checkinToken: string;
+  unitId: string;
+  residentId?: string;
+  proxyName?: string;
+  proxyDocument?: string;
+}
+
+export interface CheckinResponse {
+  success: boolean;
+  participantId: string;
+  assemblyId: string;
+  assemblyTitle: string;
+  unitIdentifier: string;
+  checkinTime: string;
+  message?: string;
+}
+
+export interface QrCodeData {
+  checkinToken: string;
+  checkinUrl: string;
+  assemblyId: string;
+  assemblyTitle: string;
+}
+
+export interface MinutesResponse {
+  id: string;
+  assemblyId: string;
+  content?: string | null;
+  summary?: string | null;
+  transcription?: string | null;
+  status: 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'PUBLISHED';
+  pdfUrl?: string | null;
+  voteSummary?: Record<string, unknown> | null;
+  attendanceSummary?: Record<string, unknown> | null;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateMinutesDto {
+  content?: string;
+  summary?: string;
+  status?: 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'PUBLISHED';
+}
+
+// ==================== API Clients ====================
+
+export const assembliesApi = {
+  /**
+   * Lista todas as assembleias
+   */
+  list: () => apiClient.get<AssemblyResponse[]>('/assemblies'),
+
+  /**
+   * Lista próximas assembleias
+   */
+  listUpcoming: () => apiClient.get<AssemblyResponse[]>('/assemblies/upcoming'),
+
+  /**
+   * Busca assembleia por ID
+   */
+  getById: (id: string) => apiClient.get<AssemblyDetailResponse>(`/assemblies/${id}`),
+
+  /**
+   * Obtém estatísticas da assembleia
+   */
+  getStats: (id: string) =>
+    apiClient.get<{
+      participantsCount: number;
+      agendaItemsCount: number;
+      votedItemsCount: number;
+      totalVotingWeight: number;
+    }>(`/assemblies/${id}/stats`),
+
+  /**
+   * Cria nova assembleia
+   */
+  create: (data: CreateAssemblyDto) => apiClient.post<AssemblyResponse>('/assemblies', data),
+
+  /**
+   * Atualiza assembleia
+   */
+  update: (id: string, data: UpdateAssemblyDto) =>
+    apiClient.put<AssemblyResponse>(`/assemblies/${id}`, data),
+
+  /**
+   * Remove assembleia
+   */
+  delete: (id: string) => apiClient.delete<void>(`/assemblies/${id}`),
+
+  /**
+   * Inicia assembleia
+   */
+  start: (id: string) => apiClient.post<AssemblyResponse>(`/assemblies/${id}/start`),
+
+  /**
+   * Finaliza assembleia
+   */
+  finish: (id: string) => apiClient.post<AssemblyResponse>(`/assemblies/${id}/finish`),
+
+  /**
+   * Cancela assembleia
+   */
+  cancel: (id: string) => apiClient.post<AssemblyResponse>(`/assemblies/${id}/cancel`),
+};
+
+export const agendaItemsApi = {
+  /**
+   * Lista pautas de uma assembleia
+   */
+  list: (assemblyId: string) =>
+    apiClient.get<AgendaItemResponse[]>(`/assemblies/${assemblyId}/agenda-items`),
+
+  /**
+   * Busca pauta por ID
+   */
+  getById: (assemblyId: string, id: string) =>
+    apiClient.get<AgendaItemResponse>(`/assemblies/${assemblyId}/agenda-items/${id}`),
+
+  /**
+   * Obtém resultado da votação
+   */
+  getVoteResult: (assemblyId: string, id: string) =>
+    apiClient.get<VoteSummary>(`/assemblies/${assemblyId}/agenda-items/${id}/result`),
+
+  /**
+   * Cria nova pauta
+   */
+  create: (assemblyId: string, data: CreateAgendaItemDto) =>
+    apiClient.post<AgendaItemResponse>(`/assemblies/${assemblyId}/agenda-items`, data),
+
+  /**
+   * Atualiza pauta
+   */
+  update: (assemblyId: string, id: string, data: UpdateAgendaItemDto) =>
+    apiClient.put<AgendaItemResponse>(`/assemblies/${assemblyId}/agenda-items/${id}`, data),
+
+  /**
+   * Remove pauta
+   */
+  delete: (assemblyId: string, id: string) =>
+    apiClient.delete<void>(`/assemblies/${assemblyId}/agenda-items/${id}`),
+
+  /**
+   * Inicia votação
+   */
+  startVoting: (assemblyId: string, id: string) =>
+    apiClient.post<AgendaItemResponse>(`/assemblies/${assemblyId}/agenda-items/${id}/start-voting`),
+
+  /**
+   * Encerra votação
+   */
+  closeVoting: (assemblyId: string, id: string) =>
+    apiClient.post<AgendaItemResponse>(`/assemblies/${assemblyId}/agenda-items/${id}/close-voting`),
+};
+
+export const participantsApi = {
+  /**
+   * Lista participantes de uma assembleia
+   */
+  list: (assemblyId: string) =>
+    apiClient.get<ParticipantResponse[]>(`/assemblies/${assemblyId}/participants`),
+
+  /**
+   * Obtém estatísticas de presença
+   */
+  getAttendance: (assemblyId: string) =>
+    apiClient.get<AttendanceStatus>(`/assemblies/${assemblyId}/participants/attendance`),
+
+  /**
+   * Busca participante por ID
+   */
+  getById: (assemblyId: string, id: string) =>
+    apiClient.get<ParticipantResponse>(`/assemblies/${assemblyId}/participants/${id}`),
+
+  /**
+   * Registra participante
+   */
+  register: (assemblyId: string, data: RegisterParticipantDto) =>
+    apiClient.post<ParticipantResponse>(`/assemblies/${assemblyId}/participants`, data),
+
+  /**
+   * Atualiza participante
+   */
+  update: (assemblyId: string, id: string, data: Partial<RegisterParticipantDto>) =>
+    apiClient.put<ParticipantResponse>(`/assemblies/${assemblyId}/participants/${id}`, data),
+
+  /**
+   * Remove participante
+   */
+  remove: (assemblyId: string, id: string) =>
+    apiClient.delete<void>(`/assemblies/${assemblyId}/participants/${id}`),
+
+  /**
+   * Marca entrada do participante
+   */
+  markJoined: (assemblyId: string, id: string) =>
+    apiClient.post<ParticipantResponse>(`/assemblies/${assemblyId}/participants/${id}/join`),
+
+  /**
+   * Marca saída do participante
+   */
+  markLeft: (assemblyId: string, id: string) =>
+    apiClient.post<ParticipantResponse>(`/assemblies/${assemblyId}/participants/${id}/leave`),
+};
+
+export const votesApi = {
+  /**
+   * Lista votos de uma pauta
+   */
+  list: (assemblyId: string, agendaItemId: string) =>
+    apiClient.get<VoteResponse[]>(
+      `/assemblies/${assemblyId}/agenda-items/${agendaItemId}/votes`
+    ),
+
+  /**
+   * Obtém resumo dos votos
+   */
+  getSummary: (assemblyId: string, agendaItemId: string) =>
+    apiClient.get<VoteSummary>(
+      `/assemblies/${assemblyId}/agenda-items/${agendaItemId}/votes/summary`
+    ),
+
+  /**
+   * Registra voto
+   */
+  cast: (assemblyId: string, agendaItemId: string, participantId: string, data: CastVoteDto) =>
+    apiClient.post<VoteResponse>(
+      `/assemblies/${assemblyId}/agenda-items/${agendaItemId}/votes/${participantId}`,
+      data
+    ),
+
+  /**
+   * Verifica se participante já votou
+   */
+  check: (assemblyId: string, agendaItemId: string, participantId: string) =>
+    apiClient.get<{ hasVoted: boolean; vote?: VoteResponse }>(
+      `/assemblies/${assemblyId}/agenda-items/${agendaItemId}/votes/check/${participantId}`
+    ),
+};
+
+export const attendanceApi = {
+  /**
+   * Realiza check-in (público)
+   */
+  checkin: (data: CheckinRequest) =>
+    apiClient.post<CheckinResponse>('/assemblies/checkin', data, { authenticated: false }),
+
+  /**
+   * Realiza checkout (público)
+   */
+  checkout: (data: { checkinToken: string; participantId: string }) =>
+    apiClient.post<{ success: boolean; checkoutTime: string }>('/assemblies/checkout', data, {
+      authenticated: false,
+    }),
+
+  /**
+   * Valida token de check-in (público)
+   */
+  validateToken: (token: string) =>
+    apiClient.get<{
+      valid: boolean;
+      assembly?: {
+        id: string;
+        title: string;
+        status: AssemblyStatus;
+        scheduledAt: string;
+        tenantName: string;
+      };
+    }>(`/assemblies/checkin/validate/${token}`, { authenticated: false }),
+
+  /**
+   * Gera token de check-in para QR Code
+   */
+  generateToken: (assemblyId: string) =>
+    apiClient.post<QrCodeData>(`/assemblies/${assemblyId}/generate-checkin-token`),
+
+  /**
+   * Obtém status de presença
+   */
+  getStatus: (assemblyId: string) =>
+    apiClient.get<AttendanceStatus>(`/assemblies/${assemblyId}/attendance`),
+
+  /**
+   * Lista participantes com status de presença
+   */
+  getParticipants: (assemblyId: string) =>
+    apiClient.get<ParticipantResponse[]>(`/assemblies/${assemblyId}/attendance/participants`),
+};
+
+export const minutesApi = {
+  /**
+   * Busca ata da assembleia
+   */
+  get: (assemblyId: string) =>
+    apiClient.get<MinutesResponse | null>(`/assemblies/${assemblyId}/minutes`),
+
+  /**
+   * Gera ata automaticamente
+   */
+  generate: (assemblyId: string) =>
+    apiClient.post<{
+      success: boolean;
+      minutesId: string;
+      content: string;
+      summary: string;
+      voteSummary: Record<string, unknown>;
+      attendanceSummary: Record<string, unknown>;
+    }>(`/assemblies/${assemblyId}/minutes/generate`),
+
+  /**
+   * Atualiza ata
+   */
+  update: (assemblyId: string, data: UpdateMinutesDto) =>
+    apiClient.put<MinutesResponse>(`/assemblies/${assemblyId}/minutes`, data),
+
+  /**
+   * Aprova ata
+   */
+  approve: (assemblyId: string) =>
+    apiClient.post<MinutesResponse>(`/assemblies/${assemblyId}/minutes/approve`),
+
+  /**
+   * Publica ata
+   */
+  publish: (assemblyId: string) =>
+    apiClient.post<MinutesResponse>(`/assemblies/${assemblyId}/minutes/publish`),
+};

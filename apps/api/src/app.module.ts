@@ -1,7 +1,20 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './modules/health/health.module';
+import {
+  AuthModule,
+  JwtAuthGuard,
+  UserLoaderGuard,
+  RolesGuard,
+  TenantGuard,
+} from './modules/auth';
+import { UsersModule } from './modules/users';
+import { TenantsModule } from './modules/tenants';
+import { UnitsModule } from './modules/units';
+import { ResidentsModule } from './modules/residents';
+import { AssembliesModule } from './modules/assemblies';
 import { getDatabaseConfig } from './core/db/database.config';
 
 @Module({
@@ -20,7 +33,36 @@ import { getDatabaseConfig } from './core/db/database.config';
     }),
 
     // Modulos da aplicacao
+    AuthModule,
+    UsersModule,
+    TenantsModule,
+    UnitsModule,
+    ResidentsModule,
+    AssembliesModule,
     HealthModule,
+  ],
+  providers: [
+    // Guards globais executam na ordem de declaracao:
+    // 1. JwtAuthGuard - Valida token JWT (rotas @Public() ignoram)
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    // 2. UserLoaderGuard - Carrega dados do usuario do banco
+    {
+      provide: APP_GUARD,
+      useClass: UserLoaderGuard,
+    },
+    // 3. RolesGuard - Verifica roles (rotas sem @Roles() permitem qualquer autenticado)
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+    // 4. TenantGuard - Verifica contexto de tenant (rotas @RequireTenant())
+    {
+      provide: APP_GUARD,
+      useClass: TenantGuard,
+    },
   ],
 })
 export class AppModule {}
