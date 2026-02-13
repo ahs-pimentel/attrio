@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { attendanceApi } from '@/lib/api';
+import { ParticipantApprovalStatus } from '@attrio/contracts';
 
 interface AssemblyInfo {
   id: string;
@@ -16,13 +17,16 @@ interface AssemblyInfo {
 
 export default function CheckinPage() {
   const params = useParams();
+  const router = useRouter();
   const token = params.token as string;
 
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assembly, setAssembly] = useState<AssemblyInfo | null>(null);
+  const [requiresOtp, setRequiresOtp] = useState(false);
   const [formData, setFormData] = useState({
+    otp: '',
     unitId: '',
     isProxy: false,
     proxyName: '',
@@ -34,6 +38,10 @@ export default function CheckinPage() {
     participantId: string;
     unitIdentifier: string;
     checkinTime: string;
+    sessionToken: string;
+    approvalStatus: ParticipantApprovalStatus;
+    isProxy: boolean;
+    message?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -44,6 +52,7 @@ export default function CheckinPage() {
 
         if (response.valid && response.assembly) {
           setAssembly(response.assembly);
+          setRequiresOtp(response.requiresOtp);
         } else {
           setError('Token de check-in invalido ou expirado');
         }
@@ -65,10 +74,18 @@ export default function CheckinPage() {
     setSubmitting(true);
     setError(null);
 
+    // Valida OTP antes de enviar se necessario
+    if (requiresOtp && formData.otp.length !== 6) {
+      setError('Informe o codigo OTP de 6 digitos');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const response = await attendanceApi.checkin({
         checkinToken: token,
-        unitId: formData.unitId,
+        otp: formData.otp,
+        unitIdentifier: formData.unitId,
         proxyName: formData.isProxy ? formData.proxyName : undefined,
         proxyDocument: formData.isProxy ? formData.proxyDocument : undefined,
       });
@@ -79,7 +96,16 @@ export default function CheckinPage() {
           participantId: response.participantId,
           unitIdentifier: response.unitIdentifier,
           checkinTime: response.checkinTime,
+          sessionToken: response.sessionToken,
+          approvalStatus: response.approvalStatus,
+          isProxy: response.isProxy,
+          message: response.message,
         });
+
+        // Redireciona para area do participante apos 3 segundos
+        setTimeout(() => {
+          router.push(`/assembly/${response.sessionToken}`);
+        }, 3000);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao realizar check-in');
@@ -122,18 +148,30 @@ export default function CheckinPage() {
   }
 
   if (success && checkinResult) {
+    const isPending = checkinResult.approvalStatus === ParticipantApprovalStatus.PENDING;
+
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent>
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+              isPending ? 'bg-yellow-100' : 'bg-green-100'
+            }`}>
+              {isPending ? (
+                <svg className="w-8 h-8 text-yellow-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              ) : (
+                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              )}
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Check-in Realizado!</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              {isPending ? 'Aguardando Aprovacao' : 'Check-in Realizado!'}
+            </h2>
             <p className="text-gray-600 mb-4">
-              Sua presenca foi registrada com sucesso.
+              {checkinResult.message || 'Sua presenca foi registrada com sucesso.'}
             </p>
             <div className="bg-gray-50 rounded-lg p-4 text-left space-y-2">
               <div className="flex justify-between">
@@ -148,7 +186,24 @@ export default function CheckinPage() {
                 <span className="text-gray-500">Horario:</span>
                 <span className="font-medium">{formatDateTime(checkinResult.checkinTime)}</span>
               </div>
+              {checkinResult.isProxy && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Tipo:</span>
+                  <span className="font-medium text-amber-600">Procurador</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-500">Status:</span>
+                <span className={`font-medium ${
+                  isPending ? 'text-yellow-600' : 'text-green-600'
+                }`}>
+                  {isPending ? 'Pendente' : 'Aprovado'}
+                </span>
+              </div>
             </div>
+            <p className="text-sm text-gray-500 mt-4">
+              Voce sera redirecionado para a area de votacao...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -184,6 +239,34 @@ export default function CheckinPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Codigo OTP
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={formData.otp}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setFormData({ ...formData, otp: value });
+                }}
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-2xl font-mono tracking-widest"
+                placeholder="000000"
+                required
+                autoComplete="one-time-code"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Digite o codigo de 6 digitos exibido na tela da assembleia
+              </p>
+              {!requiresOtp && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Aguarde o sindico iniciar o check-in e exibir o codigo OTP
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Identificador da Unidade

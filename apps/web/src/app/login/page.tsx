@@ -44,186 +44,165 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={styles.main}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Attrio</h1>
-        <p style={styles.subtitle}>
-          {isSignUp ? 'Criar nova conta' : 'Entrar na plataforma'}
-        </p>
+    <main className="flex min-h-screen">
+      {/* Left side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-attrio-navy via-attrio-blue to-attrio-blue-light items-center justify-center p-12">
+        <div className="max-w-md text-white">
+          <img
+            src="/images/logo.png"
+            alt="Attrio"
+            className="h-20 w-auto mb-8 brightness-0 invert"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
+          <h1 className="text-4xl font-bold mb-4">
+            Gestão de Condomínios & Assembleias
+          </h1>
+          <p className="text-lg text-white/90">
+            A plataforma completa para administrar seu condomínio de forma eficiente e transparente.
+          </p>
+          <div className="mt-8 space-y-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 bg-attrio-green rounded-lg p-2 mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold">Assembleias Digitais</h3>
+                <p className="text-sm text-white/80">Organize e gerencie assembleias com votação segura</p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <div className="flex-shrink-0 bg-attrio-green rounded-lg p-2 mr-3">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold">Gestão Completa</h3>
+                <p className="text-sm text-white/80">Controle de unidades, moradores e documentos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {isSignUp && (
-            <div style={styles.inputGroup}>
-              <label htmlFor="name" style={styles.label}>Nome</label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
-                style={styles.input}
+      {/* Right side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-attrio-gray-50">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-attrio-lg p-8 border border-attrio-gray-100">
+            {/* Mobile Logo */}
+            <div className="lg:hidden mb-6 text-center">
+              <img
+                src="/images/logo.png"
+                alt="Attrio"
+                className="h-12 w-auto mx-auto"
               />
             </div>
-          )}
 
-          <div style={styles.inputGroup}>
-            <label htmlFor="email" style={styles.label}>Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              style={styles.input}
-            />
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-attrio-navy mb-2">
+                {isSignUp ? 'Criar nova conta' : 'Bem-vindo de volta'}
+              </h2>
+              <p className="text-attrio-gray-500">
+                {isSignUp ? 'Preencha os dados para começar' : 'Entre com suas credenciais'}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-attrio-navy mb-1">
+                    Nome
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="w-full px-4 py-3 border border-attrio-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-attrio-blue focus:border-transparent transition-all"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-attrio-navy mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  required
+                  className="w-full px-4 py-3 border border-attrio-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-attrio-blue focus:border-transparent transition-all"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-attrio-navy mb-1">
+                  Senha
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="********"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-3 border border-attrio-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-attrio-blue focus:border-transparent transition-all"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {message && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-attrio-navy to-attrio-blue text-white py-3 px-4 rounded-lg font-semibold hover:shadow-attrio-lg transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Aguarde...' : isSignUp ? 'Criar conta' : 'Entrar'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-attrio-gray-600">
+                {isSignUp ? 'Já tem uma conta?' : 'Não tem uma conta?'}{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError(null);
+                    setMessage(null);
+                  }}
+                  className="text-attrio-blue font-semibold hover:text-attrio-navy transition-colors"
+                >
+                  {isSignUp ? 'Entrar' : 'Criar conta'}
+                </button>
+              </p>
+            </div>
           </div>
 
-          <div style={styles.inputGroup}>
-            <label htmlFor="password" style={styles.label}>Senha</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="********"
-              required
-              minLength={6}
-              style={styles.input}
-            />
+          <div className="mt-4 text-center">
+            <a href="/" className="text-sm text-attrio-gray-500 hover:text-attrio-navy transition-colors">
+              ← Voltar para o início
+            </a>
           </div>
-
-          {error && <p style={styles.error}>{error}</p>}
-          {message && <p style={styles.success}>{message}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? 'Aguarde...' : isSignUp ? 'Criar conta' : 'Entrar'}
-          </button>
-        </form>
-
-        <p style={styles.toggle}>
-          {isSignUp ? 'Ja tem uma conta?' : 'Nao tem uma conta?'}{' '}
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError(null);
-              setMessage(null);
-            }}
-            style={styles.toggleButton}
-          >
-            {isSignUp ? 'Entrar' : 'Criar conta'}
-          </button>
-        </p>
-
-        <a href="/" style={styles.backLink}>
-          Voltar para o inicio
-        </a>
+        </div>
       </div>
     </main>
   );
 }
-
-const styles: { [key: string]: React.CSSProperties } = {
-  main: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    padding: '2rem',
-    background: '#f5f5f5',
-  },
-  container: {
-    textAlign: 'center',
-    maxWidth: '400px',
-    width: '100%',
-    background: '#fff',
-    padding: '2rem',
-    borderRadius: '12px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  },
-  title: {
-    fontSize: '2rem',
-    fontWeight: 700,
-    color: '#2563eb',
-    marginBottom: '0.5rem',
-  },
-  subtitle: {
-    fontSize: '1rem',
-    color: '#666',
-    marginBottom: '1.5rem',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
-  inputGroup: {
-    textAlign: 'left',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    color: '#333',
-    marginBottom: '0.25rem',
-  },
-  input: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  button: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '1rem',
-    fontWeight: 600,
-    color: '#fff',
-    background: '#2563eb',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    marginTop: '0.5rem',
-  },
-  error: {
-    color: '#dc2626',
-    fontSize: '0.875rem',
-    margin: 0,
-  },
-  success: {
-    color: '#166534',
-    fontSize: '0.875rem',
-    margin: 0,
-  },
-  toggle: {
-    marginTop: '1.5rem',
-    color: '#666',
-    fontSize: '0.875rem',
-  },
-  toggleButton: {
-    background: 'none',
-    border: 'none',
-    color: '#2563eb',
-    cursor: 'pointer',
-    fontWeight: 600,
-    padding: 0,
-  },
-  backLink: {
-    display: 'inline-block',
-    marginTop: '1rem',
-    color: '#666',
-    fontSize: '0.875rem',
-    textDecoration: 'none',
-  },
-};

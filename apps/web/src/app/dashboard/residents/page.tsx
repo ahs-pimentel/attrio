@@ -181,10 +181,10 @@ export default function ResidentsPage() {
                 value={createdInviteLink}
                 className="flex-1 px-3 py-2 bg-white border border-green-300 rounded-lg text-sm font-mono"
               />
-              <Button onClick={handleCopyLink} variant="outline">
+              <Button onClick={() => handleCopyLink()} variant="secondary">
                 Copiar
               </Button>
-              <Button onClick={() => setCreatedInviteLink(null)} variant="outline">
+              <Button onClick={() => setCreatedInviteLink(null)} variant="secondary">
                 Fechar
               </Button>
             </div>

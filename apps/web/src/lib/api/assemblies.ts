@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { AssemblyStatus, AgendaItemStatus, VoteChoice } from '@attrio/contracts';
+import type { AssemblyStatus, AgendaItemStatus, VoteChoice, ParticipantApprovalStatus } from '@attrio/contracts';
 
 // ==================== Types ====================
 
@@ -137,7 +137,8 @@ export interface AttendanceStatus {
 
 export interface CheckinRequest {
   checkinToken: string;
-  unitId: string;
+  otp: string;
+  unitIdentifier: string;
   residentId?: string;
   proxyName?: string;
   proxyDocument?: string;
@@ -150,6 +151,9 @@ export interface CheckinResponse {
   assemblyTitle: string;
   unitIdentifier: string;
   checkinTime: string;
+  sessionToken: string;
+  approvalStatus: ParticipantApprovalStatus;
+  isProxy: boolean;
   message?: string;
 }
 
@@ -399,6 +403,7 @@ export const attendanceApi = {
   validateToken: (token: string) =>
     apiClient.get<{
       valid: boolean;
+      requiresOtp: boolean;
       assembly?: {
         id: string;
         title: string;
@@ -407,6 +412,16 @@ export const attendanceApi = {
         tenantName: string;
       };
     }>(`/assemblies/checkin/validate/${token}`, { authenticated: false }),
+
+  /**
+   * Valida OTP pelo token de check-in (público)
+   */
+  validateOtp: (checkinToken: string, otp: string) =>
+    apiClient.post<{ valid: boolean; assemblyId?: string }>(
+      `/assemblies/checkin/validate-otp/${checkinToken}`,
+      { otp },
+      { authenticated: false }
+    ),
 
   /**
    * Gera token de check-in para QR Code
@@ -425,6 +440,169 @@ export const attendanceApi = {
    */
   getParticipants: (assemblyId: string) =>
     apiClient.get<ParticipantResponse[]>(`/assemblies/${assemblyId}/attendance/participants`),
+};
+
+export const sessionApi = {
+  /**
+   * Valida sessao e obtem dados do participante
+   */
+  validate: (sessionToken: string) =>
+    apiClient.get<{
+      participantId: string;
+      assemblyId: string;
+      assemblyTitle: string;
+      assemblyStatus: string;
+      unitIdentifier: string;
+      proxyName: string | null;
+      approvalStatus: ParticipantApprovalStatus;
+      rejectionReason: string | null;
+      checkinTime: string;
+      canVote: boolean;
+    }>(`/assemblies/session/${sessionToken}`, { authenticated: false }),
+
+  /**
+   * Lista pautas da assembleia para o participante
+   */
+  getAgenda: (sessionToken: string) =>
+    apiClient.get<{
+      id: string;
+      title: string;
+      description: string | null;
+      orderIndex: number;
+      status: string;
+      hasVoted: boolean;
+      votingOtpRequired: boolean;
+    }[]>(`/assemblies/session/${sessionToken}/agenda`, { authenticated: false }),
+
+  /**
+   * Obtem status do participante
+   */
+  getStatus: (sessionToken: string) =>
+    apiClient.get<{
+      isPresent: boolean;
+      approvalStatus: ParticipantApprovalStatus;
+      canVote: boolean;
+      message: string;
+    }>(`/assemblies/session/${sessionToken}/status`, { authenticated: false }),
+
+  /**
+   * Registra voto em uma pauta
+   */
+  castVote: (sessionToken: string, agendaItemId: string, otp: string, choice: string) =>
+    apiClient.post<{
+      success: boolean;
+      voteId: string;
+      choice: string;
+      votedAt: string;
+    }>(`/assemblies/session/${sessionToken}/vote`, { agendaItemId, otp, choice }, { authenticated: false }),
+};
+
+export const otpApi = {
+  /**
+   * Gera OTP para check-in da assembleia (Sindico)
+   */
+  generateCheckinOtp: (assemblyId: string) =>
+    apiClient.post<{
+      otp: string;
+      expiresAt: string;
+      remainingSeconds: number;
+    }>(`/assemblies/${assemblyId}/otp/generate`),
+
+  /**
+   * Obtem OTP atual da assembleia (Sindico)
+   */
+  getCheckinOtp: (assemblyId: string) =>
+    apiClient.get<{
+      otp: string;
+      expiresAt: string;
+      remainingSeconds: number;
+    } | null>(`/assemblies/${assemblyId}/otp`),
+
+  /**
+   * Gera OTP para votacao de pauta (Sindico)
+   */
+  generateVotingOtp: (assemblyId: string, agendaItemId: string) =>
+    apiClient.post<{
+      otp: string;
+      expiresAt: string;
+      remainingSeconds: number;
+    }>(`/assemblies/${assemblyId}/agenda-items/${agendaItemId}/otp/generate`),
+
+  /**
+   * Obtem OTP atual da pauta (Sindico)
+   */
+  getVotingOtp: (assemblyId: string, agendaItemId: string) =>
+    apiClient.get<{
+      otp: string;
+      expiresAt: string;
+      remainingSeconds: number;
+    } | null>(`/assemblies/${assemblyId}/agenda-items/${agendaItemId}/otp`),
+};
+
+export const proxyApi = {
+  /**
+   * Upload de arquivo de procuracao (via session token)
+   */
+  upload: (sessionToken: string, participantId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('participantId', participantId);
+    formData.append('file', file);
+
+    return apiClient.post<{
+      participantId: string;
+      fileName: string;
+      fileUrl: string;
+      uploadedAt: string;
+    }>('/assemblies/session/proxy/upload', formData, {
+      authenticated: false,
+      headers: {
+        'x-session-token': sessionToken,
+      },
+    });
+  },
+
+  /**
+   * Lista procuracoes pendentes de aprovacao
+   */
+  getPending: (assemblyId: string) =>
+    apiClient.get<{
+      participantId: string;
+      unitIdentifier: string;
+      proxyName: string;
+      proxyDocument: string | null;
+      fileName: string | null;
+      fileUrl: string | null;
+      checkinTime: string;
+    }[]>(`/assemblies/${assemblyId}/pending-proxies`),
+
+  /**
+   * Aprova procuracao
+   */
+  approve: (assemblyId: string, participantId: string) =>
+    apiClient.post<{
+      participantId: string;
+      unitIdentifier: string;
+      approvalStatus: ParticipantApprovalStatus;
+      approvedAt?: string;
+    }>(`/assemblies/${assemblyId}/participants/${participantId}/approve`),
+
+  /**
+   * Rejeita procuracao
+   */
+  reject: (assemblyId: string, participantId: string, reason: string) =>
+    apiClient.post<{
+      participantId: string;
+      unitIdentifier: string;
+      approvalStatus: ParticipantApprovalStatus;
+      approvedAt?: string;
+      rejectionReason?: string;
+    }>(`/assemblies/${assemblyId}/participants/${participantId}/reject`, { reason }),
+
+  /**
+   * Download do arquivo de procuracao
+   */
+  downloadUrl: (assemblyId: string, participantId: string) =>
+    `/api/assemblies/${assemblyId}/participants/${participantId}/proxy`,
 };
 
 export const minutesApi = {

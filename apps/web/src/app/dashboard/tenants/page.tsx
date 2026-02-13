@@ -169,7 +169,7 @@ export default function TenantsPage() {
                   {editingId ? 'Salvar' : 'Criar'}
                 </Button>
                 {editingId && (
-                  <Button type="button" variant="outline" onClick={handleCancel}>
+                  <Button type="button" variant="secondary" onClick={handleCancel}>
                     Cancelar
                   </Button>
                 )}

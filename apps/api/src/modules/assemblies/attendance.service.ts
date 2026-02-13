@@ -3,14 +3,16 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { AssemblyEntity, AssemblyParticipantEntity } from './entities';
 import { CheckinRequestDto, AttendanceStatusDto, QrCodeDataDto } from './dto/attendance.dto';
-import { AssemblyStatus } from '@attrio/contracts';
+import { AssemblyStatus, ParticipantApprovalStatus } from '@attrio/contracts';
 import { UnitEntity } from '../units/unit.entity';
+import { OtpService } from './otp.service';
 
 @Injectable()
 export class AttendanceService {
@@ -21,6 +23,7 @@ export class AttendanceService {
     private readonly participantRepository: Repository<AssemblyParticipantEntity>,
     @InjectRepository(UnitEntity)
     private readonly unitRepository: Repository<UnitEntity>,
+    private readonly otpService: OtpService,
   ) {}
 
   /**
@@ -58,6 +61,9 @@ export class AttendanceService {
     assemblyTitle: string;
     unitIdentifier: string;
     checkinTime: Date;
+    sessionToken: string;
+    approvalStatus: ParticipantApprovalStatus;
+    isProxy: boolean;
     message?: string;
   }> {
     // Busca assembleia pelo token
@@ -70,6 +76,12 @@ export class AttendanceService {
       throw new NotFoundException('Token de check-in invalido');
     }
 
+    // Valida OTP
+    const otpValid = await this.otpService.validateAssemblyOtp(assembly.id, dto.otp);
+    if (!otpValid) {
+      throw new UnauthorizedException('OTP invalido ou expirado');
+    }
+
     // Valida status da assembleia
     if (assembly.status === AssemblyStatus.FINISHED) {
       throw new BadRequestException('Esta assembleia ja foi finalizada');
@@ -79,23 +91,29 @@ export class AttendanceService {
       throw new BadRequestException('Esta assembleia foi cancelada');
     }
 
-    // Busca a unidade
+    // Busca a unidade pelo identificador (ex: A-101)
     const unit = await this.unitRepository.findOne({
-      where: { id: dto.unitId, tenantId: assembly.tenantId },
+      where: { identifier: dto.unitIdentifier, tenantId: assembly.tenantId },
     });
 
     if (!unit) {
-      throw new NotFoundException('Unidade nao encontrada ou nao pertence a este condominio');
+      throw new NotFoundException(`Unidade "${dto.unitIdentifier}" nao encontrada neste condominio`);
     }
 
-    // Valida dados do participante
-    if (!dto.residentId && !dto.proxyName) {
-      throw new BadRequestException('Informe o morador ou os dados do procurador');
-    }
+    // Determina se e procurador
+    const isProxy = !!dto.proxyName;
+
+    // Define status de aprovacao: procuradores ficam PENDING, diretos ficam APPROVED
+    const approvalStatus = isProxy
+      ? ParticipantApprovalStatus.PENDING
+      : ParticipantApprovalStatus.APPROVED;
+
+    // Gera session token unico
+    const sessionToken = randomBytes(32).toString('hex');
 
     // Verifica se a unidade ja tem participante registrado
     let participant = await this.participantRepository.findOne({
-      where: { assemblyId: assembly.id, unitId: dto.unitId },
+      where: { assemblyId: assembly.id, unitId: unit.id },
     });
 
     if (participant) {
@@ -107,22 +125,26 @@ export class AttendanceService {
       // Re-entry (voltou apos sair)
       participant.joinedAt = new Date();
       participant.leftAt = null;
+      participant.sessionToken = sessionToken;
 
       // Atualiza dados do procurador se informado
       if (dto.proxyName) {
         participant.proxyName = dto.proxyName;
         participant.proxyDocument = dto.proxyDocument || null;
+        participant.approvalStatus = ParticipantApprovalStatus.PENDING;
       }
     } else {
       // Novo participante
       participant = this.participantRepository.create({
         assemblyId: assembly.id,
-        unitId: dto.unitId,
+        unitId: unit.id,
         residentId: dto.residentId || null,
         proxyName: dto.proxyName || null,
         proxyDocument: dto.proxyDocument || null,
         joinedAt: new Date(),
         votingWeight: 1, // Pode ser ajustado conforme fracao ideal
+        sessionToken,
+        approvalStatus,
       });
     }
 
@@ -135,7 +157,12 @@ export class AttendanceService {
       assemblyTitle: assembly.title,
       unitIdentifier: unit.identifier,
       checkinTime: participant.joinedAt!,
-      message: 'Check-in realizado com sucesso',
+      sessionToken: participant.sessionToken!,
+      approvalStatus: participant.approvalStatus,
+      isProxy,
+      message: isProxy
+        ? 'Check-in realizado. Aguardando aprovacao da procuracao pelo sindico.'
+        : 'Check-in realizado com sucesso',
     };
   }
 
@@ -257,6 +284,7 @@ export class AttendanceService {
    */
   async validateCheckinToken(token: string): Promise<{
     valid: boolean;
+    requiresOtp: boolean;
     assembly?: {
       id: string;
       title: string;
@@ -271,17 +299,52 @@ export class AttendanceService {
     });
 
     if (!assembly) {
-      return { valid: false };
+      return { valid: false, requiresOtp: false };
     }
+
+    // Verifica se tem OTP configurado e valido
+    const hasValidOtp = assembly.currentOtp && assembly.otpExpiresAt && new Date() < assembly.otpExpiresAt;
 
     return {
       valid: true,
+      requiresOtp: !!hasValidOtp,
       assembly: {
         id: assembly.id,
         title: assembly.title,
         status: assembly.status,
         scheduledAt: assembly.scheduledAt,
         tenantName: assembly.tenant?.name || '',
+      },
+    };
+  }
+
+  /**
+   * Valida session token e retorna dados do participante
+   */
+  async validateSessionToken(sessionToken: string): Promise<{
+    valid: boolean;
+    participant?: AssemblyParticipantEntity & {
+      unitIdentifier?: string;
+      assemblyTitle?: string;
+      assemblyStatus?: AssemblyStatus;
+    };
+  }> {
+    const participant = await this.participantRepository.findOne({
+      where: { sessionToken },
+      relations: ['unit', 'assembly'],
+    });
+
+    if (!participant) {
+      return { valid: false };
+    }
+
+    return {
+      valid: true,
+      participant: {
+        ...participant,
+        unitIdentifier: participant.unit?.identifier,
+        assemblyTitle: participant.assembly?.title,
+        assemblyStatus: participant.assembly?.status,
       },
     };
   }

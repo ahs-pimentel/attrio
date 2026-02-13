@@ -40,3 +40,4 @@ coverage
 
 # Docker
 infra/data
+.env.production

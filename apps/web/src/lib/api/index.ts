@@ -1,6 +1,9 @@
 // Core client
 export { apiClient, request, ApiClientError, type ApiError } from './client';
 
+// Re-export types from contracts
+export { VoteChoice } from '@attrio/contracts';
+
 // Auth
 export { authApi, type ProfileResponse, type UserRole } from './auth';
 
@@ -36,6 +39,9 @@ export {
   participantsApi,
   votesApi,
   attendanceApi,
+  sessionApi,
+  otpApi,
+  proxyApi,
   minutesApi,
   type AssemblyResponse,
   type AssemblyDetailResponse,

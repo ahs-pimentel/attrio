@@ -7,7 +7,9 @@ import {
   OneToMany,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
+import { ParticipantApprovalStatus } from '@attrio/contracts';
 import { AssemblyEntity } from './assembly.entity';
 import { ResidentEntity } from '../../residents/entities/resident.entity';
 import { UnitEntity } from '../../units/unit.entity';
@@ -33,6 +35,36 @@ export class AssemblyParticipantEntity {
 
   @Column({ type: 'varchar', name: 'proxy_document', length: 20, nullable: true })
   proxyDocument: string | null; // Documento do procurador
+
+  // Arquivo de procuracao
+  @Column({ type: 'varchar', name: 'proxy_file_url', length: 500, nullable: true })
+  proxyFileUrl: string | null;
+
+  @Column({ type: 'varchar', name: 'proxy_file_name', length: 255, nullable: true })
+  proxyFileName: string | null;
+
+  // Status de aprovacao (para procuradores)
+  @Column({
+    type: 'enum',
+    enum: ParticipantApprovalStatus,
+    name: 'approval_status',
+    default: ParticipantApprovalStatus.APPROVED,
+  })
+  approvalStatus: ParticipantApprovalStatus;
+
+  @Column({ type: 'uuid', name: 'approved_by', nullable: true })
+  approvedBy: string | null;
+
+  @Column({ name: 'approved_at', type: 'timestamp with time zone', nullable: true })
+  approvedAt: Date | null;
+
+  @Column({ type: 'text', name: 'rejection_reason', nullable: true })
+  rejectionReason: string | null;
+
+  // Sessao do participante apos check-in
+  @Column({ type: 'varchar', name: 'session_token', length: 64, nullable: true, unique: true })
+  @Index('IDX_participant_session_token')
+  sessionToken: string | null;
 
   @Column({ name: 'joined_at', type: 'timestamp with time zone', nullable: true })
   joinedAt: Date | null;

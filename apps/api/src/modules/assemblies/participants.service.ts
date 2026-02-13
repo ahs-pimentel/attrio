@@ -14,15 +14,22 @@ export class ParticipantsService {
     private readonly assemblyRepository: Repository<AssemblyEntity>,
   ) {}
 
-  async findByAssembly(assemblyId: string): Promise<AssemblyParticipantEntity[]> {
-    return this.participantRepository.find({
+  async findByAssembly(assemblyId: string): Promise<(AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string })[]> {
+    const participants = await this.participantRepository.find({
       where: { assemblyId },
       relations: ['unit', 'resident'],
       order: { createdAt: 'ASC' },
     });
+
+    // Transform to include flat fields for frontend
+    return participants.map(p => ({
+      ...p,
+      unitIdentifier: p.unit?.identifier || undefined,
+      residentName: p.resident?.fullName || undefined,
+    }));
   }
 
-  async findById(id: string): Promise<AssemblyParticipantEntity> {
+  async findById(id: string): Promise<AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string }> {
     const participant = await this.participantRepository.findOne({
       where: { id },
       relations: ['unit', 'resident', 'assembly'],
@@ -30,7 +37,11 @@ export class ParticipantsService {
     if (!participant) {
       throw new NotFoundException(`Participante com ID ${id} nao encontrado`);
     }
-    return participant;
+    return {
+      ...participant,
+      unitIdentifier: participant.unit?.identifier || undefined,
+      residentName: participant.resident?.fullName || undefined,
+    };
   }
 
   async findByUnitAndAssembly(unitId: string, assemblyId: string): Promise<AssemblyParticipantEntity | null> {
@@ -44,7 +55,7 @@ export class ParticipantsService {
     assemblyId: string,
     tenantId: string,
     dto: RegisterParticipantDto,
-  ): Promise<AssemblyParticipantEntity> {
+  ): Promise<AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string }> {
     // Verificar se a assembleia existe e pertence ao tenant
     const assembly = await this.assemblyRepository.findOne({
       where: { id: assemblyId, tenantId },
@@ -78,10 +89,11 @@ export class ParticipantsService {
       votingWeight: dto.votingWeight ?? 1,
     });
 
-    return this.participantRepository.save(participant);
+    const saved = await this.participantRepository.save(participant);
+    return this.findById(saved.id);
   }
 
-  async update(id: string, dto: UpdateParticipantDto): Promise<AssemblyParticipantEntity> {
+  async update(id: string, dto: UpdateParticipantDto): Promise<AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string }> {
     const participant = await this.findById(id);
 
     if (participant.assembly.status === AssemblyStatus.FINISHED) {
@@ -92,7 +104,8 @@ export class ParticipantsService {
     if (dto.proxyDocument !== undefined) participant.proxyDocument = dto.proxyDocument;
     if (dto.votingWeight !== undefined) participant.votingWeight = dto.votingWeight;
 
-    return this.participantRepository.save(participant);
+    await this.participantRepository.save(participant);
+    return this.findById(id);
   }
 
   async remove(id: string): Promise<void> {
@@ -110,7 +123,7 @@ export class ParticipantsService {
     await this.participantRepository.remove(participant);
   }
 
-  async markJoined(id: string): Promise<AssemblyParticipantEntity> {
+  async markJoined(id: string): Promise<AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string }> {
     const participant = await this.findById(id);
 
     if (participant.assembly.status !== AssemblyStatus.IN_PROGRESS) {
@@ -118,13 +131,15 @@ export class ParticipantsService {
     }
 
     participant.joinedAt = new Date();
-    return this.participantRepository.save(participant);
+    await this.participantRepository.save(participant);
+    return this.findById(id);
   }
 
-  async markLeft(id: string): Promise<AssemblyParticipantEntity> {
+  async markLeft(id: string): Promise<AssemblyParticipantEntity & { unitIdentifier?: string; residentName?: string }> {
     const participant = await this.findById(id);
     participant.leftAt = new Date();
-    return this.participantRepository.save(participant);
+    await this.participantRepository.save(participant);
+    return this.findById(id);
   }
 
   async getAttendanceStats(assemblyId: string): Promise<{

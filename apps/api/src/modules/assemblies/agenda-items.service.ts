@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AgendaItemEntity, VoteEntity, AssemblyEntity } from './entities';
 import { CreateAgendaItemDto, UpdateAgendaItemDto, VoteResultDto } from './dto';
 import { AgendaItemStatus, AssemblyStatus, VoteChoice } from '@attrio/contracts';
+import { OtpService } from './otp.service';
 
 @Injectable()
 export class AgendaItemsService {
@@ -14,6 +15,8 @@ export class AgendaItemsService {
     private readonly voteRepository: Repository<VoteEntity>,
     @InjectRepository(AssemblyEntity)
     private readonly assemblyRepository: Repository<AssemblyEntity>,
+    @Inject(forwardRef(() => OtpService))
+    private readonly otpService: OtpService,
   ) {}
 
   async findByAssembly(assemblyId: string): Promise<AgendaItemEntity[]> {
@@ -127,7 +130,14 @@ export class AgendaItemsService {
     item.status = AgendaItemStatus.VOTING;
     item.votingStartedAt = new Date();
 
-    return this.agendaItemRepository.save(item);
+    // Salva o item primeiro
+    const savedItem = await this.agendaItemRepository.save(item);
+
+    // Gera OTP automaticamente para a votacao
+    await this.otpService.generateVotingOtp(savedItem.id, savedItem.assemblyId);
+
+    // Recarrega o item com o OTP gerado
+    return this.findById(savedItem.id);
   }
 
   async closeVoting(id: string): Promise<AgendaItemEntity> {
@@ -143,6 +153,11 @@ export class AgendaItemsService {
     item.status = AgendaItemStatus.CLOSED;
     item.votingEndedAt = new Date();
     item.result = this.formatVoteResult(result);
+
+    // Limpa OTP de votacao
+    item.votingOtp = null;
+    item.votingOtpGeneratedAt = null;
+    item.votingOtpExpiresAt = null;
 
     return this.agendaItemRepository.save(item);
   }

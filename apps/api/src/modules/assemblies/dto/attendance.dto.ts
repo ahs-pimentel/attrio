@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsUUID, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsOptional, MaxLength, Length } from 'class-validator';
+import { ParticipantApprovalStatus } from '@attrio/contracts';
 
 export class CheckinRequestDto {
   @ApiProperty({ description: 'Token de check-in da assembleia (do QR Code)' })
@@ -7,10 +8,17 @@ export class CheckinRequestDto {
   @IsNotEmpty()
   checkinToken: string;
 
-  @ApiProperty({ description: 'ID da unidade' })
-  @IsUUID()
+  @ApiProperty({ description: 'Codigo OTP de 6 digitos (exibido pelo sindico)' })
+  @IsString()
   @IsNotEmpty()
-  unitId: string;
+  @Length(6, 6)
+  otp: string;
+
+  @ApiProperty({ description: 'Identificador da unidade (ex: A-101)' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  unitIdentifier: string;
 
   @ApiPropertyOptional({ description: 'ID do morador (se for o proprio)' })
   @IsUUID()
@@ -48,6 +56,15 @@ export class CheckinResponseDto {
 
   @ApiProperty()
   checkinTime: Date;
+
+  @ApiProperty({ description: 'Token de sessao para area do participante' })
+  sessionToken: string;
+
+  @ApiProperty({ description: 'Status de aprovacao (APPROVED, PENDING, REJECTED)', enum: ParticipantApprovalStatus })
+  approvalStatus: ParticipantApprovalStatus;
+
+  @ApiProperty({ description: 'Se e procurador' })
+  isProxy: boolean;
 
   @ApiPropertyOptional()
   message?: string;

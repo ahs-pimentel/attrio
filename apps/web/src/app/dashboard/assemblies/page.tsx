@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuthContext } from '@/components/AuthProvider';
 import { assembliesApi, AssemblyResponse } from '@/lib/api';
 
 export default function AssembliesPage() {
+  const router = useRouter();
   const { isSyndic } = useAuthContext();
   const [assemblies, setAssemblies] = useState<AssemblyResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,11 +227,15 @@ export default function AssembliesPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {assemblies.map((assembly) => (
-              <div key={assembly.id} className="p-6 hover:bg-gray-50">
+              <div
+                key={assembly.id}
+                className="p-6 hover:bg-gray-50 cursor-pointer"
+                onClick={() => router.push(`/dashboard/assemblies/${assembly.id}`)}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600">
                         {assembly.title}
                       </h3>
                       {getStatusBadge(assembly.status)}
@@ -275,46 +281,56 @@ export default function AssembliesPage() {
                       )}
                     </div>
                   </div>
-                  {isSyndic && (
-                    <div className="flex items-center gap-2 ml-4">
-                      {assembly.status === 'SCHEDULED' && (
-                        <>
+                  <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    {/* Botao de detalhes sempre visivel */}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => router.push(`/dashboard/assemblies/${assembly.id}`)}
+                    >
+                      Ver Detalhes
+                    </Button>
+                    {isSyndic && (
+                      <>
+                        {assembly.status === 'SCHEDULED' && (
+                          <>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleStart(assembly.id)}
+                            >
+                              Iniciar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancel(assembly.id)}
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                        {assembly.status === 'IN_PROGRESS' && (
                           <Button
-                            variant="primary"
+                            variant="secondary"
                             size="sm"
-                            onClick={() => handleStart(assembly.id)}
+                            onClick={() => handleFinish(assembly.id)}
                           >
-                            Iniciar
+                            Encerrar
                           </Button>
+                        )}
+                        {(assembly.status === 'CANCELLED' || assembly.status === 'FINISHED') && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleCancel(assembly.id)}
+                            onClick={() => handleDelete(assembly.id)}
                           >
-                            Cancelar
+                            Excluir
                           </Button>
-                        </>
-                      )}
-                      {assembly.status === 'IN_PROGRESS' && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleFinish(assembly.id)}
-                        >
-                          Encerrar
-                        </Button>
-                      )}
-                      {(assembly.status === 'CANCELLED' || assembly.status === 'FINISHED') && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(assembly.id)}
-                        >
-                          Excluir
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

@@ -50,6 +50,16 @@ export class AssemblyEntity {
   @Column({ type: 'varchar', name: 'checkin_token', length: 64, nullable: true, unique: true })
   checkinToken: string | null;
 
+  // OTP para check-in (exibido na tela pelo sindico)
+  @Column({ type: 'varchar', name: 'current_otp', length: 6, nullable: true })
+  currentOtp: string | null;
+
+  @Column({ name: 'otp_generated_at', type: 'timestamp with time zone', nullable: true })
+  otpGeneratedAt: Date | null;
+
+  @Column({ name: 'otp_expires_at', type: 'timestamp with time zone', nullable: true })
+  otpExpiresAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -1,227 +1,190 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuthContext } from '@/components/AuthProvider';
-import { apiClient } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-interface HealthStatus {
-  status: string;
-  timestamp: string;
-  service: string;
-  version: string;
-}
-
-interface UserProfile {
-  id: string;
-  email?: string;
-  isAnonymous: boolean;
-}
-
-export default function Home() {
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const { user, loading: authLoading, signOut } = useAuthContext();
+export default function LandingPage() {
+  const { user } = useAuthContext();
+  const router = useRouter();
 
   useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        const data = await apiClient.get<HealthStatus>('/health', { authenticated: false });
-        setHealth(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkHealth();
-  }, []);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (user) {
-        try {
-          const data = await apiClient.get<UserProfile>('/auth/profile');
-          setProfile(data);
-        } catch (err) {
-          console.error('Erro ao carregar perfil:', err);
-        }
-      } else {
-        setProfile(null);
-      }
-    };
-
-    if (!authLoading) {
-      fetchProfile();
+    if (user) {
+      router.push('/dashboard');
     }
-  }, [user, authLoading]);
+  }, [user, router]);
 
   return (
-    <main style={styles.main}>
-      <div style={styles.container}>
-        <h1 style={styles.title}>Attrio</h1>
-        <p style={styles.subtitle}>Plataforma de Gerenciamento de Condominios</p>
-
-        {/* Auth Status */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Autenticacao</h2>
-          {authLoading ? (
-            <p style={styles.loading}>Verificando autenticacao...</p>
-          ) : user ? (
-            <div style={styles.success}>
-              <p><strong>Usuario:</strong> {user.email}</p>
-              {profile && (
-                <p><strong>ID no sistema:</strong> {profile.id}</p>
-              )}
-              <button onClick={signOut} style={styles.logoutButton}>
-                Sair
-              </button>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed w-full bg-white/90 backdrop-blur-sm border-b border-attrio-gray-100 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <img src="/images/logo.png" alt="Attrio" className="h-10 w-auto" />
             </div>
-          ) : (
+            <div className="flex items-center gap-4">
+              <Link
+                href="/login"
+                className="text-attrio-navy hover:text-attrio-blue font-medium transition-colors"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/login"
+                className="bg-gradient-to-r from-attrio-navy to-attrio-blue text-white px-6 py-2 rounded-lg font-semibold hover:shadow-attrio-lg transition-all"
+              >
+                Começar Agora
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p style={{ marginBottom: '1rem', color: '#666' }}>Voce nao esta autenticado</p>
-              <a href="/login" style={styles.loginLink}>
-                Entrar / Criar conta
-              </a>
+              <h1 className="text-5xl lg:text-6xl font-bold text-attrio-navy mb-6 leading-tight">
+                Gestão de Condomínios
+                <span className="text-attrio-blue"> Simplificada</span>
+              </h1>
+              <p className="text-xl text-attrio-gray-600 mb-8">
+                A plataforma completa para administrar seu condomínio com eficiência, transparência e segurança. Assembleias digitais, votações seguras e muito mais.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/login"
+                  className="bg-gradient-to-r from-attrio-navy to-attrio-blue text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-attrio-lg transition-all text-center"
+                >
+                  Começar Gratuitamente
+                </Link>
+                <a
+                  href="#features"
+                  className="border-2 border-attrio-navy text-attrio-navy px-8 py-4 rounded-lg font-semibold text-lg hover:bg-attrio-navy hover:text-white transition-all text-center"
+                >
+                  Conhecer Recursos
+                </a>
+              </div>
             </div>
-          )}
+            <div className="relative">
+              <div className="bg-gradient-to-br from-attrio-navy to-attrio-blue rounded-2xl p-8 shadow-attrio-lg">
+                <img
+                  src="/images/logo.png"
+                  alt="Dashboard Preview"
+                  className="w-full brightness-0 invert opacity-20"
+                  style={{ filter: 'brightness(0) invert(1)' }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* API Status */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Status da API</h2>
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-attrio-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-attrio-navy mb-4">
+              Tudo que você precisa em um só lugar
+            </h2>
+            <p className="text-xl text-attrio-gray-600">
+              Recursos completos para uma gestão eficiente
+            </p>
+          </div>
 
-          {loading && <p style={styles.loading}>Verificando conexao...</p>}
-
-          {error && (
-            <div style={styles.error}>
-              <p>Erro ao conectar com a API</p>
-              <small>{error}</small>
-            </div>
-          )}
-
-          {health && (
-            <div style={styles.success}>
-              <p><strong>Status:</strong> {health.status}</p>
-              <p><strong>Servico:</strong> {health.service}</p>
-              <p><strong>Versao:</strong> {health.version}</p>
-              <p><strong>Timestamp:</strong> {new Date(health.timestamp).toLocaleString('pt-BR')}</p>
-            </div>
-          )}
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl p-8 shadow-attrio hover:shadow-attrio-lg transition-all border border-attrio-gray-100"
+              >
+                <div className="bg-gradient-to-br from-attrio-navy to-attrio-blue w-14 h-14 rounded-lg flex items-center justify-center mb-4">
+                  <span className="text-2xl">{feature.icon}</span>
+                </div>
+                <h3 className="text-xl font-semibold text-attrio-navy mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-attrio-gray-600">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <div style={styles.links}>
-          <a
-            href="http://localhost:3001/api/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.link}
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-attrio-navy to-attrio-blue">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">
+            Pronto para começar?
+          </h2>
+          <p className="text-xl text-white/90 mb-8">
+            Junte-se aos condomínios que já confiam na Attrio
+          </p>
+          <Link
+            href="/login"
+            className="inline-block bg-white text-attrio-navy px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-attrio-lg transition-all"
           >
-            Swagger UI
-          </a>
-          <a
-            href="http://localhost:3001/api/reference"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.link}
-          >
-            Scalar API Reference
-          </a>
+            Criar Conta Gratuita
+          </Link>
         </div>
-      </div>
-    </main>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-attrio-navy py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <img
+                src="/images/logo.png"
+                alt="Attrio"
+                className="h-10 w-auto brightness-0 invert"
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
+            </div>
+            <div className="text-white/70 text-sm">
+              © 2026 Attrio. Todos os direitos reservados.
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
-  main: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    padding: '2rem',
+const features = [
+  {
+    icon: '📅',
+    title: 'Assembleias Digitais',
+    description: 'Organize e conduza assembleias online com votações seguras e controle de presença.',
   },
-  container: {
-    textAlign: 'center',
-    maxWidth: '600px',
-    width: '100%',
+  {
+    icon: '🏢',
+    title: 'Gestão de Unidades',
+    description: 'Cadastre e gerencie todas as unidades do condomínio de forma organizada.',
   },
-  title: {
-    fontSize: '3rem',
-    fontWeight: 700,
-    color: '#2563eb',
-    marginBottom: '0.5rem',
+  {
+    icon: '👥',
+    title: 'Controle de Moradores',
+    description: 'Mantenha um cadastro atualizado de todos os moradores e seus dados.',
   },
-  subtitle: {
-    fontSize: '1.25rem',
-    color: '#666',
-    marginBottom: '2rem',
+  {
+    icon: '🗳️',
+    title: 'Votação Segura',
+    description: 'Sistema de votação com OTP e controle de procuração para máxima segurança.',
   },
-  card: {
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '2rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    marginBottom: '2rem',
+  {
+    icon: '📊',
+    title: 'Relatórios Detalhados',
+    description: 'Gere relatórios completos de assembleias, votações e participações.',
   },
-  cardTitle: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    marginBottom: '1rem',
-    color: '#333',
+  {
+    icon: '🔒',
+    title: 'Segurança Garantida',
+    description: 'Proteção de dados e conformidade com LGPD para sua tranquilidade.',
   },
-  loading: {
-    color: '#666',
-  },
-  error: {
-    color: '#dc2626',
-    padding: '1rem',
-    background: '#fef2f2',
-    borderRadius: '8px',
-  },
-  success: {
-    color: '#166534',
-    padding: '1rem',
-    background: '#f0fdf4',
-    borderRadius: '8px',
-    textAlign: 'left',
-  },
-  links: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  link: {
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    background: '#2563eb',
-    color: '#fff',
-    borderRadius: '8px',
-    fontWeight: 500,
-    transition: 'background 0.2s',
-    textDecoration: 'none',
-  },
-  loginLink: {
-    display: 'inline-block',
-    padding: '0.75rem 1.5rem',
-    background: '#2563eb',
-    color: '#fff',
-    borderRadius: '8px',
-    fontWeight: 500,
-    textDecoration: 'none',
-  },
-  logoutButton: {
-    marginTop: '1rem',
-    padding: '0.5rem 1rem',
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: 500,
-  },
-};
+];

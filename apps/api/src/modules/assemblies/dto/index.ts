@@ -4,3 +4,5 @@ export * from './participant.dto';
 export * from './vote.dto';
 export * from './attendance.dto';
 export * from './minutes.dto';
+export * from './otp.dto';
+export * from './proxy.dto';

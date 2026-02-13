@@ -81,6 +81,16 @@ export enum VoteChoice {
   ABSTENTION = 'ABSTENTION',
 }
 
+/** Status de aprovacao do participante (procuracao) */
+export enum ParticipantApprovalStatus {
+  /** Participante direto ou aprovado */
+  APPROVED = 'APPROVED',
+  /** Aguardando aprovacao de procuracao */
+  PENDING = 'PENDING',
+  /** Procuracao rejeitada */
+  REJECTED = 'REJECTED',
+}
+
 // ============================================
 // Tipos base
 // ============================================

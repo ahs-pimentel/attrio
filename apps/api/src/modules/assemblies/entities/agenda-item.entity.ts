@@ -48,6 +48,16 @@ export class AgendaItemEntity {
   @Column({ name: 'voting_ended_at', type: 'timestamp with time zone', nullable: true })
   votingEndedAt: Date | null;
 
+  // OTP para votacao (exibido pelo sindico ao abrir votacao)
+  @Column({ type: 'varchar', name: 'voting_otp', length: 6, nullable: true })
+  votingOtp: string | null;
+
+  @Column({ name: 'voting_otp_generated_at', type: 'timestamp with time zone', nullable: true })
+  votingOtpGeneratedAt: Date | null;
+
+  @Column({ name: 'voting_otp_expires_at', type: 'timestamp with time zone', nullable: true })
+  votingOtpExpiresAt: Date | null;
+
   @Column({ type: 'text', nullable: true })
   result: string | null; // Texto descritivo do resultado
 

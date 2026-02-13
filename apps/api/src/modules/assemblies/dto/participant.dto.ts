@@ -99,4 +99,11 @@ export class ParticipantDetailResponseDto {
 
   @ApiPropertyOptional()
   resident?: unknown;
+
+  // Flat fields for frontend convenience
+  @ApiPropertyOptional({ description: 'Identificador da unidade (ex: A-101)' })
+  unitIdentifier?: string | null;
+
+  @ApiPropertyOptional({ description: 'Nome do morador' })
+  residentName?: string | null;
 }

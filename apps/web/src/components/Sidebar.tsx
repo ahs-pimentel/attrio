@@ -69,24 +69,32 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex flex-col w-64 bg-gray-900 min-h-screen">
+    <div className="flex flex-col w-64 bg-gradient-to-b from-attrio-navy to-attrio-blue h-screen shadow-attrio-lg fixed left-0 top-0">
       {/* Logo */}
-      <div className="flex items-center h-16 px-6 border-b border-gray-800">
-        <span className="text-xl font-bold text-white">Attrio</span>
+      <div className="flex items-center justify-center h-24 px-6 border-b border-white/10 flex-shrink-0">
+        <img
+          src="/images/logo.png"
+          alt="Attrio"
+          className="h-16 w-auto brightness-0 invert"
+          style={{ filter: 'brightness(0) invert(1)' }}
+        />
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          // Para o Dashboard, apenas a rota exata. Para outras, inclui sub-rotas
+          const isActive = item.href === '/dashboard'
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-white text-attrio-navy shadow-attrio-sm'
+                  : 'text-white/90 hover:bg-white/10 hover:text-white'
               }`}
             >
               <item.icon className="w-5 h-5 mr-3" />
@@ -97,10 +105,10 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-white/10">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-attrio-green flex items-center justify-center">
               <span className="text-white text-sm font-medium">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
               </span>
@@ -110,15 +118,15 @@ export function Sidebar() {
             <p className="text-sm font-medium text-white truncate">
               {user?.email || 'Usuario'}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-1">
               {getRoleBadge() && (
-                <span className="text-xs px-2 py-0.5 bg-blue-600 rounded text-white">
+                <span className="text-xs px-2 py-0.5 bg-attrio-green rounded text-white font-medium">
                   {getRoleBadge()}
                 </span>
               )}
               <button
                 onClick={signOut}
-                className="text-xs text-gray-400 hover:text-white transition-colors"
+                className="text-xs text-white/70 hover:text-white transition-colors"
               >
                 Sair
               </button>
