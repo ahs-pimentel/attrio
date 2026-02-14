@@ -52,22 +52,29 @@ export class UserLoaderGuard implements CanActivate {
     // Carrega usuario do banco
     let dbUser = await this.usersService.findBySupabaseId(authUser.id);
 
-    // Em desenvolvimento, auto-cria usuario se nao existir
-    if (!dbUser && this.isDevelopment) {
-      this.logger.log(`Auto-criando usuario em desenvolvimento: ${authUser.email}`);
-
-      // Obter ou criar tenant de desenvolvimento
-      const devTenant = await this.getOrCreateDevTenant();
-
-      dbUser = await this.usersService.createOrUpdate({
-        supabaseUserId: authUser.id,
-        email: authUser.email || 'user@dev.local',
-        name: authUser.email?.split('@')[0] || 'Dev User',
-        tenantId: devTenant.id,
-        role: UserRole.SAAS_ADMIN, // Admin do SaaS por padrao em dev
-      });
-
-      this.logger.log(`Usuario criado: ${dbUser.id} no tenant ${devTenant.id}`);
+    // Auto-cria usuario se nao existir
+    if (!dbUser) {
+      if (this.isDevelopment) {
+        this.logger.log(`Auto-criando usuario em desenvolvimento: ${authUser.email}`);
+        const devTenant = await this.getOrCreateDevTenant();
+        dbUser = await this.usersService.createOrUpdate({
+          supabaseUserId: authUser.id,
+          email: authUser.email || 'user@dev.local',
+          name: authUser.email?.split('@')[0] || 'Dev User',
+          tenantId: devTenant.id,
+          role: UserRole.SAAS_ADMIN,
+        });
+        this.logger.log(`Usuario criado: ${dbUser.id} no tenant ${devTenant.id}`);
+      } else {
+        this.logger.log(`Auto-criando usuario em producao: ${authUser.email}`);
+        dbUser = await this.usersService.createOrUpdate({
+          supabaseUserId: authUser.id,
+          email: authUser.email || 'user@unknown.com',
+          name: authUser.email?.split('@')[0] || 'User',
+          role: UserRole.RESIDENT,
+        });
+        this.logger.log(`Usuario criado em producao: ${dbUser.id}`);
+      }
     }
 
     // Em desenvolvimento, se usuario existe mas nao tem tenant, atribuir
