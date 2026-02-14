@@ -60,6 +60,8 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       # JWT
       JWT_SECRET: ${JWT_SECRET}
+      # CORS
+      CORS_ORIGIN: "https://attrio.online,https://www.attrio.online"
       PORT: 3001
     networks:
       - attrio-network
