@@ -3,20 +3,28 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
-
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Install dependencies
+# Copy workspace config
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+# Copy API package.json
+COPY apps/api/package.json ./apps/api/
+
+# Copy contracts package (needed as dependency)
+COPY packages/contracts ./packages/contracts/
+
+# Install ALL dependencies (including dev dependencies for build)
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy API source code
+COPY apps/api ./apps/api/
 
 # Build the application
+WORKDIR /app/apps/api
 RUN pnpm build
 
 # Production stage
@@ -27,21 +35,33 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy package files
-COPY package*.json ./
+# Copy workspace config
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY pnpm-lock.yaml ./
 
+# Copy API package.json
+COPY apps/api/package.json ./apps/api/
+
+# Copy contracts package
+COPY packages/contracts ./packages/contracts/
+
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile --filter=api
 
 # Copy built application from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
+# Set correct permissions
+RUN chown -R nestjs:nodejs /app
+
 USER nestjs
+
+WORKDIR /app/apps/api
 
 # Expose port
 EXPOSE 3001

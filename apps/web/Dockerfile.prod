@@ -6,15 +6,22 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy package files
-COPY package*.json ./
+# Copy workspace config
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY pnpm-lock.yaml ./
+
+# Copy web package.json
+COPY apps/web/package.json ./apps/web/
+
+# Copy contracts package (needed as dependency)
+COPY packages/contracts ./packages/contracts/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy web source code
+COPY apps/web ./apps/web/
 
 # Build arguments for environment variables
 ARG NEXT_PUBLIC_API_URL
@@ -26,6 +33,7 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 # Build Next.js application
+WORKDIR /app/apps/web
 RUN pnpm build
 
 # Production stage
@@ -36,26 +44,35 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy package files
-COPY package*.json ./
+# Copy workspace config
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 COPY pnpm-lock.yaml ./
 
+# Copy web package.json
+COPY apps/web/package.json ./apps/web/
+
+# Copy contracts package
+COPY packages/contracts ./packages/contracts/
+
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile --filter=web
 
 # Copy built application from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/apps/web/.next ./apps/web/.next
+COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/next.config.js ./apps/web/
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
 # Set correct permissions
-RUN chown -R nextjs:nodejs /app/.next
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
+
+WORKDIR /app/apps/web
 
 # Expose port
 EXPOSE 3000
