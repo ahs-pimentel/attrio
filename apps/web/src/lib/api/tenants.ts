@@ -30,13 +30,13 @@ export const tenantsApi = {
   create: (data: CreateTenantDto) =>
     request<TenantResponse>('/tenants', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data,
     }),
 
   update: (id: string, data: UpdateTenantDto) =>
     request<TenantResponse>(`/tenants/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: data,
     }),
 
   delete: (id: string) =>
