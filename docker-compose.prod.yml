@@ -67,19 +67,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
-      # HTTP Router
-      - "traefik.http.routers.attrio-api-http.rule=Host(`api.attrio.online`)"
-      - "traefik.http.routers.attrio-api-http.entrypoints=web"
-      - "traefik.http.routers.attrio-api-http.middlewares=redirect-to-https"
       # HTTPS Router
       - "traefik.http.routers.attrio-api.rule=Host(`api.attrio.online`)"
       - "traefik.http.routers.attrio-api.entrypoints=websecure"
       - "traefik.http.routers.attrio-api.tls.certresolver=letsencrypt"
       # Service
       - "traefik.http.services.attrio-api.loadbalancer.server.port=3001"
-      # Middleware para redirect
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -110,10 +103,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
-      # HTTP Router
-      - "traefik.http.routers.attrio-web-http.rule=Host(`attrio.online`) || Host(`www.attrio.online`)"
-      - "traefik.http.routers.attrio-web-http.entrypoints=web"
-      - "traefik.http.routers.attrio-web-http.middlewares=redirect-to-https"
       # HTTPS Router
       - "traefik.http.routers.attrio-web.rule=Host(`attrio.online`) || Host(`www.attrio.online`)"
       - "traefik.http.routers.attrio-web.entrypoints=websecure"
