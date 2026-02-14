@@ -6,22 +6,26 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy workspace config
+# Copy workspace configuration
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 
-# Copy web package.json
+# Copy all package.json files for proper dependency resolution
+COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY packages/contracts/package.json ./packages/contracts/
 
-# Copy contracts package (needed as dependency)
-COPY packages/contracts ./packages/contracts/
-
-# Install dependencies
+# Install ALL dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy web source code
+# Copy source code
+COPY packages/contracts ./packages/contracts/
 COPY apps/web ./apps/web/
+
+# Build contracts first
+WORKDIR /app/packages/contracts
+RUN pnpm build
 
 # Build arguments for environment variables
 ARG NEXT_PUBLIC_API_URL
@@ -44,21 +48,21 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy workspace config
+# Copy workspace configuration
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 
-# Copy web package.json
+# Copy all package.json files
 COPY apps/web/package.json ./apps/web/
-
-# Copy contracts package
-COPY packages/contracts ./packages/contracts/
+COPY packages/contracts/package.json ./packages/contracts/
 
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile --filter=web
+RUN pnpm install --prod --frozen-lockfile
 
-# Copy built application from builder
+# Copy built files from builder
+COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
+COPY --from=builder /app/packages/contracts/package.json ./packages/contracts/
 COPY --from=builder /app/apps/web/.next ./apps/web/.next
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/next.config.js ./apps/web/
@@ -67,7 +71,7 @@ COPY --from=builder /app/apps/web/next.config.js ./apps/web/
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Set correct permissions
+# Set permissions
 RUN chown -R nextjs:nodejs /app
 
 USER nextjs

@@ -6,24 +6,28 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy workspace config
+# Copy workspace configuration
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 
-# Copy API package.json
+# Copy all package.json files for proper dependency resolution
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY packages/contracts/package.json ./packages/contracts/
 
-# Copy contracts package (needed as dependency)
-COPY packages/contracts ./packages/contracts/
-
-# Install ALL dependencies (including dev dependencies for build)
+# Install ALL dependencies (including devDependencies for build)
 RUN pnpm install --frozen-lockfile
 
-# Copy API source code
+# Copy source code
+COPY packages/contracts ./packages/contracts/
 COPY apps/api ./apps/api/
 
-# Build the application
+# Build contracts first
+WORKDIR /app/packages/contracts
+RUN pnpm build
+
+# Build API
 WORKDIR /app/apps/api
 RUN pnpm build
 
@@ -35,28 +39,28 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm@9.15.0
 
-# Copy workspace config
+# Copy workspace configuration
 COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 
-# Copy API package.json
+# Copy all package.json files
 COPY apps/api/package.json ./apps/api/
-
-# Copy contracts package
-COPY packages/contracts ./packages/contracts/
+COPY packages/contracts/package.json ./packages/contracts/
 
 # Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile --filter=api
+RUN pnpm install --prod --frozen-lockfile
 
-# Copy built application from builder
+# Copy built files from builder
+COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
+COPY --from=builder /app/packages/contracts/package.json ./packages/contracts/
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
-# Set correct permissions
+# Set permissions
 RUN chown -R nestjs:nodejs /app
 
 USER nestjs
