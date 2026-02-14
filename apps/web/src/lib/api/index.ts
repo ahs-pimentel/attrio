@@ -7,6 +7,9 @@ export { VoteChoice } from '@attrio/contracts';
 // Auth
 export { authApi, type ProfileResponse, type UserRole } from './auth';
 
+// Users
+export { usersApi, type UserResponse, type UpdateUserDto } from './users';
+
 // Domain-specific clients
 export { unitsApi, type UnitResponse } from './units';
 
