@@ -4,12 +4,14 @@ services:
   # Banco de dados PostgreSQL
   postgres:
     image: postgres:16-alpine
-    container_name: attrio-postgres
+    container_name: attrio-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-attrio}
+      POSTGRES_DB: ${POSTGRES_DB:-attrio_db}
       POSTGRES_USER: ${POSTGRES_USER:-attrio}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-attrio}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,15 +25,17 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: attrio-redis
+    container_name: attrio-redis-dev
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
       - attrio-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
