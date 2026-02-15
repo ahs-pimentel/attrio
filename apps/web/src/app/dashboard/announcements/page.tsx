@@ -282,14 +282,16 @@ export default function AnnouncementsPage() {
                     >
                       Ver
                     </button>
-                    {isSyndic && announcement.type !== 'ASSEMBLY' && (
+                    {isSyndic && (
                       <>
-                        <button
-                          onClick={() => handleEdit(announcement)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Editar
-                        </button>
+                        {announcement.type !== 'ASSEMBLY' && (
+                          <button
+                            onClick={() => handleEdit(announcement)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Editar
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(announcement.id)}
                           className="text-red-600 hover:text-red-900"
