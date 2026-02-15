@@ -1,17 +1,13 @@
-version: '3.8'
-
 services:
   # Banco de dados PostgreSQL
   postgres:
     image: postgres:16-alpine
-    container_name: attrio-postgres-dev
+    container_name: attrio-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-attrio_db}
+      POSTGRES_DB: ${POSTGRES_DB:-attrio}
       POSTGRES_USER: ${POSTGRES_USER:-attrio}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-attrio}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -25,17 +21,15 @@ services:
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: attrio-redis-dev
+    container_name: attrio-redis
     restart: unless-stopped
-    command: redis-server
-    ports:
-      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     networks:
       - attrio-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,19 +70,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
-      # HTTP Router
-      - "traefik.http.routers.attrio-api-http.rule=Host(`api.attrio.online`)"
-      - "traefik.http.routers.attrio-api-http.entrypoints=web"
-      - "traefik.http.routers.attrio-api-http.middlewares=redirect-to-https"
       # HTTPS Router
       - "traefik.http.routers.attrio-api.rule=Host(`api.attrio.online`)"
       - "traefik.http.routers.attrio-api.entrypoints=websecure"
       - "traefik.http.routers.attrio-api.tls.certresolver=letsencrypt"
       # Service
       - "traefik.http.services.attrio-api.loadbalancer.server.port=3001"
-      # Middleware para redirect
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,10 +106,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-public"
-      # HTTP Router
-      - "traefik.http.routers.attrio-web-http.rule=Host(`attrio.online`) || Host(`www.attrio.online`)"
-      - "traefik.http.routers.attrio-web-http.entrypoints=web"
-      - "traefik.http.routers.attrio-web-http.middlewares=redirect-to-https"
       # HTTPS Router
       - "traefik.http.routers.attrio-web.rule=Host(`attrio.online`) || Host(`www.attrio.online`)"
       - "traefik.http.routers.attrio-web.entrypoints=websecure"
