@@ -17,6 +17,8 @@ import { UnitsModule } from './modules/units';
 import { ResidentsModule } from './modules/residents';
 import { AssembliesModule } from './modules/assemblies';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { IssuesModule } from './modules/issues/issues.module';
+import { ReservationsModule } from './modules/reservations/reservations.module';
 import { SeedModule } from './modules/seed';
 import { getDatabaseConfig } from './core/db/database.config';
 import { EmailModule } from './core/email/email.module';
@@ -50,6 +52,8 @@ import { EmailModule } from './core/email/email.module';
     ResidentsModule,
     AssembliesModule,
     AnnouncementsModule,
+    IssuesModule,
+    ReservationsModule,
     HealthModule,
     SeedModule,
   ],

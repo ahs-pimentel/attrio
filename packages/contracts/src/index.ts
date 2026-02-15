@@ -87,6 +87,29 @@ export enum AnnouncementType {
   ASSEMBLY = 'ASSEMBLY',
 }
 
+/** Status de uma ocorrencia */
+export enum IssueStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+}
+
+/** Prioridade de uma ocorrencia */
+export enum IssuePriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+/** Status de uma reserva */
+export enum ReservationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
 /** Status de aprovacao do participante (procuracao) */
 export enum ParticipantApprovalStatus {
   /** Participante direto ou aprovado */

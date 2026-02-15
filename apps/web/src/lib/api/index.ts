@@ -72,3 +72,25 @@ export {
   type CreateAnnouncementDto as CreateAnnouncementInput,
   type UpdateAnnouncementDto as UpdateAnnouncementInput,
 } from './announcements';
+
+export {
+  issueCategoriesApi,
+  issuesApi,
+  type IssueCategoryResponse,
+  type CreateIssueCategoryDto,
+  type UpdateIssueCategoryDto,
+  type IssueResponse,
+  type CreateIssueDto,
+  type UpdateIssueDto,
+} from './issues';
+
+export {
+  commonAreasApi,
+  reservationsApi,
+  type CommonAreaResponse,
+  type CreateCommonAreaDto,
+  type UpdateCommonAreaDto,
+  type ReservationResponse,
+  type CreateReservationDto,
+  type UpdateReservationStatusDto,
+} from './reservations';
