@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUUID } from 'class-validator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { UserRole } from '@attrio/contracts';
 import { UsersService } from '../users/users.service';
@@ -53,6 +54,7 @@ class ProfileResponse {
 
 class SwitchTenantDto {
   @ApiProperty()
+  @IsUUID()
   tenantId: string;
 }
 
