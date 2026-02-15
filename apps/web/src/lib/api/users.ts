@@ -9,6 +9,7 @@ export interface UserResponse {
   role: UserRole;
   tenantId: string | null;
   tenant: { id: string; name: string; slug: string } | null;
+  tenants: { id: string; name: string; slug: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -17,7 +18,7 @@ export interface UpdateUserDto {
   name?: string;
   email?: string;
   role?: UserRole;
-  tenantId?: string | null;
+  tenantIds?: string[];
 }
 
 export const usersApi = {

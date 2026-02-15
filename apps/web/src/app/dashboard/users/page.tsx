@@ -23,7 +23,7 @@ export default function UsersPage() {
     name: '',
     email: '',
     role: UserRole.RESIDENT,
-    tenantId: '',
+    tenantIds: [] as string[],
   });
 
   const loadData = async () => {
@@ -53,7 +53,7 @@ export default function UsersPage() {
       name: user.name,
       email: user.email,
       role: user.role,
-      tenantId: user.tenantId || '',
+      tenantIds: user.tenants?.map(t => t.id) || (user.tenantId ? [user.tenantId] : []),
     });
     setEditModalOpen(true);
   };
@@ -62,9 +62,17 @@ export default function UsersPage() {
     setFormData({
       ...formData,
       role,
-      // Auto-clear tenant if changing to SAAS_ADMIN
-      tenantId: role === UserRole.SAAS_ADMIN ? '' : formData.tenantId,
+      tenantIds: role === UserRole.SAAS_ADMIN ? [] : formData.tenantIds,
     });
+  };
+
+  const toggleTenant = (tenantId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tenantIds: prev.tenantIds.includes(tenantId)
+        ? prev.tenantIds.filter(id => id !== tenantId)
+        : [...prev.tenantIds, tenantId],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +85,7 @@ export default function UsersPage() {
         name: formData.name,
         email: formData.email,
         role: formData.role,
-        tenantId: formData.tenantId || null,
+        tenantIds: formData.tenantIds,
       });
       setEditModalOpen(false);
       setEditingUser(null);
@@ -207,8 +215,10 @@ export default function UsersPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {getRoleBadge(user.role)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.tenant?.name || '-'}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {user.tenants?.length > 0
+                        ? user.tenants.map(t => t.name).join(', ')
+                        : user.tenant?.name || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.createdAt)}
@@ -373,24 +383,33 @@ export default function UsersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Condominio
+                    Condominios
                   </label>
-                  <select
-                    value={formData.tenantId}
-                    onChange={(e) => setFormData({ ...formData, tenantId: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={formData.role === UserRole.SAAS_ADMIN}
-                  >
-                    <option value="">Nenhum</option>
-                    {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className={`border border-gray-300 rounded-md p-2 space-y-2 max-h-40 overflow-y-auto ${formData.role === UserRole.SAAS_ADMIN ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {tenants.length === 0 ? (
+                      <p className="text-sm text-gray-400 px-1">Nenhum condominio cadastrado</p>
+                    ) : (
+                      tenants.map((tenant) => (
+                        <label key={tenant.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-gray-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.tenantIds.includes(tenant.id)}
+                            onChange={() => toggleTenant(tenant.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{tenant.name}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
                   {formData.role === UserRole.SAAS_ADMIN && (
                     <p className="mt-1 text-xs text-gray-500">
                       Admin Sistema nao pode ter condominio associado
+                    </p>
+                  )}
+                  {formData.tenantIds.length > 1 && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formData.tenantIds.length} condominios selecionados
                     </p>
                   )}
                 </div>
