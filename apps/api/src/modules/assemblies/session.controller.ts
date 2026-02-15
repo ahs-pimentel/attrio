@@ -20,7 +20,7 @@ import { VotesService } from './votes.service';
 import { OtpService } from './otp.service';
 import { Public } from '../auth';
 import { VoteChoice, ParticipantApprovalStatus, AgendaItemStatus, AssemblyStatus } from '@attrio/contracts';
-import { IsString, IsUUID, IsEnum } from 'class-validator';
+import { IsString, IsUUID, IsEnum, IsOptional } from 'class-validator';
 
 // ==================== DTOs ====================
 
@@ -58,6 +58,7 @@ class CastVoteRequestDto {
   @IsUUID()
   agendaItemId: string;
 
+  @IsOptional()
   @IsString()
   otp: string;
 
@@ -140,10 +141,13 @@ export class SessionController {
       throw new UnauthorizedException('Voce nao esta autorizado a votar');
     }
 
-    // Valida OTP da pauta
-    const otpValid = await this.otpService.validateVotingOtp(dto.agendaItemId, dto.otp);
-    if (!otpValid) {
-      throw new UnauthorizedException('OTP de votacao invalido ou expirado');
+    // Valida OTP da pauta (so se a pauta tiver OTP configurado)
+    const agendaDetails = await this.sessionService.getAgendaItemDetails(sessionToken, dto.agendaItemId);
+    if (agendaDetails.votingOtpRequired) {
+      const otpValid = await this.otpService.validateVotingOtp(dto.agendaItemId, dto.otp);
+      if (!otpValid) {
+        throw new UnauthorizedException('OTP de votacao invalido ou expirado');
+      }
     }
 
     // Registra voto
