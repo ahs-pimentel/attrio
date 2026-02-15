@@ -62,6 +62,8 @@ export class IssuesService {
     if (dto.categoryId !== undefined) issue.categoryId = dto.categoryId;
     if (dto.priority !== undefined) issue.priority = dto.priority;
 
+    if (dto.resolutionNote !== undefined) issue.resolutionNote = dto.resolutionNote;
+
     if (dto.status !== undefined) {
       issue.status = dto.status;
       if (dto.status === IssueStatus.RESOLVED || dto.status === IssueStatus.CLOSED) {

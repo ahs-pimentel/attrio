@@ -53,6 +53,9 @@ export class IssueEntity {
   @Column({ type: 'timestamp', name: 'resolved_at', nullable: true })
   resolvedAt: Date | null;
 
+  @Column({ type: 'text', name: 'resolution_note', nullable: true })
+  resolutionNote: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

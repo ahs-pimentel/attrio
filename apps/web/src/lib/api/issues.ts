@@ -33,6 +33,7 @@ export interface IssueResponse {
   resolvedBy: string | null;
   resolvedByName: string | null;
   resolvedAt: string | null;
+  resolutionNote: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +52,7 @@ export interface UpdateIssueDto {
   categoryId?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  resolutionNote?: string;
 }
 
 export const issueCategoriesApi = {

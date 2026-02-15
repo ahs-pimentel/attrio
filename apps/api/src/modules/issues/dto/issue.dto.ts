@@ -54,6 +54,11 @@ export class UpdateIssueDto {
   @IsEnum(IssueStatus)
   @IsOptional()
   status?: IssueStatus;
+
+  @ApiPropertyOptional({ description: 'Nota de resolucao (o que foi feito)' })
+  @IsString()
+  @IsOptional()
+  resolutionNote?: string;
 }
 
 export class IssueResponseDto {
@@ -101,6 +106,9 @@ export class IssueResponseDto {
 
   @ApiProperty({ type: Date, nullable: true })
   resolvedAt: Date | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  resolutionNote: string | null;
 
   @ApiProperty()
   createdAt: Date;

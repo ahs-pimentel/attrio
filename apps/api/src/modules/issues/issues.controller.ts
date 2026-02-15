@@ -119,6 +119,7 @@ export class IssuesController {
       resolvedBy: i.resolvedBy,
       resolvedByName: i.resolver?.name || i.resolver?.email || null,
       resolvedAt: i.resolvedAt,
+      resolutionNote: i.resolutionNote || null,
       createdAt: i.createdAt,
       updatedAt: i.updatedAt,
     };

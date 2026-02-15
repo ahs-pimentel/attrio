@@ -65,6 +65,12 @@ export default function IssuesPage() {
   // Issue detail
   const [viewingIssue, setViewingIssue] = useState<IssueResponse | null>(null);
 
+  // Resolution form
+  const [showResolveForm, setShowResolveForm] = useState(false);
+  const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [resolving, setResolving] = useState(false);
+
   // Category form
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -133,9 +139,11 @@ export default function IssuesPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleUpdateStatus = async (id: string, status: string, note?: string) => {
     try {
-      await issuesApi.update(id, { status: status as any });
+      const data: any = { status };
+      if (note) data.resolutionNote = note;
+      await issuesApi.update(id, data);
       await loadData();
       if (viewingIssue?.id === id) {
         const updated = await issuesApi.getById(id);
@@ -143,6 +151,27 @@ export default function IssuesPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar status');
+    }
+  };
+
+  const handleResolveClick = (issueId: string) => {
+    setResolvingIssueId(issueId);
+    setResolutionNote('');
+    setShowResolveForm(true);
+  };
+
+  const handleSubmitResolve = async () => {
+    if (!resolvingIssueId) return;
+    setResolving(true);
+    try {
+      await handleUpdateStatus(resolvingIssueId, 'RESOLVED', resolutionNote || undefined);
+      setShowResolveForm(false);
+      setResolvingIssueId(null);
+      setResolutionNote('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao resolver ocorrencia');
+    } finally {
+      setResolving(false);
     }
   };
 
@@ -329,8 +358,15 @@ export default function IssuesPage() {
               )}
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-xs font-medium text-gray-500 uppercase mb-2">Descricao</h4>
               <p className="text-gray-800 whitespace-pre-wrap">{viewingIssue.description}</p>
             </div>
+            {viewingIssue.resolutionNote && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="text-xs font-medium text-green-700 uppercase mb-2">Resolucao</h4>
+                <p className="text-green-900 whitespace-pre-wrap">{viewingIssue.resolutionNote}</p>
+              </div>
+            )}
             {isSyndic && viewingIssue.status !== 'CLOSED' && (
               <div className="flex gap-2 pt-2">
                 {viewingIssue.status === 'OPEN' && (
@@ -339,7 +375,7 @@ export default function IssuesPage() {
                   </Button>
                 )}
                 {(viewingIssue.status === 'OPEN' || viewingIssue.status === 'IN_PROGRESS') && (
-                  <Button size="sm" variant="secondary" onClick={() => handleUpdateStatus(viewingIssue.id, 'RESOLVED')}>
+                  <Button size="sm" variant="secondary" onClick={() => handleResolveClick(viewingIssue.id)}>
                     Marcar Resolvida
                   </Button>
                 )}
@@ -353,6 +389,35 @@ export default function IssuesPage() {
         <ModalFooter>
           <Button variant="secondary" onClick={() => setViewingIssue(null)}>
             Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Resolve Form Modal */}
+      <Modal
+        isOpen={showResolveForm}
+        onClose={() => setShowResolveForm(false)}
+        title="Resolver Ocorrencia"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Descreva o que foi feito para resolver esta ocorrencia:
+          </p>
+          <Textarea
+            label="Nota de resolucao"
+            value={resolutionNote}
+            onChange={(e) => setResolutionNote(e.target.value)}
+            placeholder="Ex: Foi realizada a troca da lampada do corredor do 3o andar..."
+            rows={4}
+          />
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setShowResolveForm(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmitResolve} loading={resolving}>
+            Confirmar Resolucao
           </Button>
         </ModalFooter>
       </Modal>
