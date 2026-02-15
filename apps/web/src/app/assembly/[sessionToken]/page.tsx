@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { sessionApi } from '@/lib/api';
 import { ParticipantApprovalStatus, AgendaItemStatus, AssemblyStatus, VoteChoice } from '@attrio/contracts';
 
 interface SessionData {
@@ -45,21 +46,18 @@ export default function ParticipantPage() {
   const fetchData = useCallback(async () => {
     try {
       // Valida sessao
-      const sessionRes = await fetch(`/api/assemblies/session/${sessionToken}`);
-      if (!sessionRes.ok) {
-        throw new Error('Sessao invalida ou expirada');
-      }
-      const sessionData = await sessionRes.json();
-      setSession(sessionData);
+      const sessionData = await sessionApi.validate(sessionToken);
+      setSession(sessionData as SessionData);
 
       // Busca pautas
-      const agendaRes = await fetch(`/api/assemblies/session/${sessionToken}/agenda`);
-      if (agendaRes.ok) {
-        const agendaData = await agendaRes.json();
-        setAgendaItems(agendaData);
+      try {
+        const agendaData = await sessionApi.getAgenda(sessionToken);
+        setAgendaItems(agendaData as AgendaItem[]);
+      } catch {
+        // Ignora erro de pautas
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+      setError(err instanceof Error ? err.message : 'Sessao invalida ou expirada');
     } finally {
       setLoading(false);
     }
@@ -85,20 +83,7 @@ export default function ParticipantPage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/assemblies/session/${sessionToken}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agendaItemId: selectedItem.id,
-          otp: votingOtp,
-          choice,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Erro ao registrar voto');
-      }
+      await sessionApi.castVote(sessionToken, selectedItem.id, votingOtp, choice);
 
       setVoteSuccess(true);
       setSelectedItem(null);
