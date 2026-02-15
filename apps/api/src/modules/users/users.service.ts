@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, ConflictException } 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
+import { UserTenantEntity } from './user-tenant.entity';
 import { UserRole } from '@attrio/contracts';
 import { UpdateUserDto } from './dto/user.dto';
 
@@ -10,6 +11,8 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(UserTenantEntity)
+    private readonly userTenantRepository: Repository<UserTenantEntity>,
   ) {}
 
   async findBySupabaseId(supabaseUserId: string): Promise<UserEntity | null> {
@@ -51,7 +54,14 @@ export class UsersService {
       if (data.name) user.name = data.name;
       if (data.tenantId !== undefined) user.tenantId = data.tenantId;
       if (data.role) user.role = data.role;
-      return this.userRepository.save(user);
+      user = await this.userRepository.save(user);
+
+      // Garantir entrada na junction table
+      if (data.tenantId) {
+        await this.addUserTenant(user.id, data.tenantId);
+      }
+
+      return user;
     }
 
     // Criar novo usuario
@@ -63,7 +73,14 @@ export class UsersService {
       role: data.role || UserRole.RESIDENT,
     });
 
-    return this.userRepository.save(user);
+    user = await this.userRepository.save(user);
+
+    // Criar entrada na junction table
+    if (data.tenantId) {
+      await this.addUserTenant(user.id, data.tenantId);
+    }
+
+    return user;
   }
 
   async updateRole(id: string, role: UserRole): Promise<UserEntity | null> {
@@ -79,12 +96,17 @@ export class UsersService {
     if (!user) return null;
 
     user.tenantId = tenantId;
-    return this.userRepository.save(user);
+    await this.userRepository.save(user);
+
+    // Garantir entrada na junction table
+    await this.addUserTenant(id, tenantId);
+
+    return user;
   }
 
   async findAll(): Promise<UserEntity[]> {
     return this.userRepository.find({
-      relations: ['tenant'],
+      relations: ['tenant', 'userTenants', 'userTenants.tenant'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -92,7 +114,7 @@ export class UsersService {
   async findByIdWithRelations(id: string): Promise<UserEntity | null> {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['tenant'],
+      relations: ['tenant', 'userTenants', 'userTenants.tenant'],
     });
   }
 
@@ -124,14 +146,86 @@ export class UsersService {
     // Auto-clear tenant when promoting to SAAS_ADMIN
     if (dto.role === UserRole.SAAS_ADMIN) {
       user.tenantId = null;
+      // Limpar junction table
+      await this.userTenantRepository.delete({ userId: id });
     }
 
     // Apply updates
     if (dto.name !== undefined) user.name = dto.name;
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.role !== undefined) user.role = dto.role;
-    if (dto.tenantId !== undefined) user.tenantId = dto.tenantId;
+
+    // Processar tenantIds (atribuicao a multiplos condominios)
+    if (dto.tenantIds !== undefined) {
+      // Remover entradas existentes
+      await this.userTenantRepository.delete({ userId: id });
+
+      if (dto.tenantIds.length > 0) {
+        // Inserir novas entradas
+        const entries = dto.tenantIds.map(tenantId =>
+          this.userTenantRepository.create({ userId: id, tenantId }),
+        );
+        await this.userTenantRepository.save(entries);
+
+        // Se tenantId atual nao esta na nova lista, setar o primeiro
+        if (!dto.tenantIds.includes(user.tenantId || '')) {
+          user.tenantId = dto.tenantIds[0];
+        }
+      } else {
+        user.tenantId = null;
+      }
+    } else if (dto.tenantId !== undefined) {
+      user.tenantId = dto.tenantId;
+      // Garantir entrada na junction table
+      if (dto.tenantId) {
+        await this.addUserTenant(id, dto.tenantId);
+      }
+    }
 
     return this.userRepository.save(user);
+  }
+
+  // === Metodos multi-tenant ===
+
+  async findUserTenants(userId: string): Promise<UserTenantEntity[]> {
+    return this.userTenantRepository.find({
+      where: { userId },
+      relations: ['tenant'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async switchTenant(userId: string, tenantId: string): Promise<UserEntity> {
+    const userTenant = await this.userTenantRepository.findOne({
+      where: { userId, tenantId },
+    });
+
+    if (!userTenant) {
+      throw new ForbiddenException('Usuario nao tem acesso a este condominio');
+    }
+
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado');
+    }
+
+    user.tenantId = tenantId;
+    return this.userRepository.save(user);
+  }
+
+  async addUserTenant(userId: string, tenantId: string): Promise<UserTenantEntity> {
+    const existing = await this.userTenantRepository.findOne({
+      where: { userId, tenantId },
+    });
+    if (existing) {
+      return existing;
+    }
+
+    const userTenant = this.userTenantRepository.create({ userId, tenantId });
+    return this.userTenantRepository.save(userTenant);
+  }
+
+  async removeUserTenant(userId: string, tenantId: string): Promise<void> {
+    await this.userTenantRepository.delete({ userId, tenantId });
   }
 }

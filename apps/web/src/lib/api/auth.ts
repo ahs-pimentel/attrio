@@ -2,6 +2,12 @@ import { request } from './client';
 
 export type UserRole = 'SAAS_ADMIN' | 'SYNDIC' | 'DOORMAN' | 'RESIDENT';
 
+export interface TenantInfo {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface ProfileResponse {
   id: string;
   email?: string;
@@ -10,11 +16,26 @@ export interface ProfileResponse {
   userId?: string;
   tenantId?: string | null;
   role?: UserRole;
+  availableTenants?: TenantInfo[];
 }
 
 export const authApi = {
   /**
-   * Obtém o perfil do usuário autenticado
+   * Obtem o perfil do usuario autenticado
    */
   getProfile: () => request<ProfileResponse>('/auth/profile'),
+
+  /**
+   * Lista condominios do usuario autenticado
+   */
+  getUserTenants: () => request<TenantInfo[]>('/auth/tenants'),
+
+  /**
+   * Troca o condominio ativo
+   */
+  switchTenant: (tenantId: string) =>
+    request<{ tenantId: string }>('/auth/switch-tenant', {
+      method: 'POST',
+      body: { tenantId },
+    }),
 };

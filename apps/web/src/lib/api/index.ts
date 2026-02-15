@@ -5,7 +5,7 @@ export { apiClient, request, ApiClientError, type ApiError } from './client';
 export { VoteChoice } from '@attrio/contracts';
 
 // Auth
-export { authApi, type ProfileResponse, type UserRole } from './auth';
+export { authApi, type ProfileResponse, type UserRole, type TenantInfo } from './auth';
 
 // Users
 export { usersApi, type UserResponse, type UpdateUserDto } from './users';

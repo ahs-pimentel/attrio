@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, MaxLength } from 'class-validator';
 import { UserRole } from '@attrio/contracts';
 
 export class UpdateUserDto {
@@ -24,6 +24,12 @@ export class UpdateUserDto {
   @IsUUID()
   @IsOptional()
   tenantId?: string | null;
+
+  @ApiPropertyOptional({ type: [String], description: 'Lista de tenant IDs para associar ao usuario' })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  tenantIds?: string[];
 }
 
 export class UserResponseDto {
@@ -47,6 +53,9 @@ export class UserResponseDto {
 
   @ApiProperty({ type: 'object', nullable: true })
   tenant: { id: string; name: string; slug: string } | null;
+
+  @ApiPropertyOptional({ type: [Object] })
+  tenants: { id: string; name: string; slug: string }[];
 
   @ApiProperty()
   createdAt: Date;

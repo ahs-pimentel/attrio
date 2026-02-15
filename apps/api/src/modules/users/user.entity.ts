@@ -6,10 +6,12 @@ import {
   UpdateDateColumn,
   Index,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { UserRole } from '@attrio/contracts';
 import { TenantEntity } from '../tenants/tenant.entity';
+import { UserTenantEntity } from './user-tenant.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -46,4 +48,7 @@ export class UserEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @OneToMany(() => UserTenantEntity, (ut) => ut.user)
+  userTenants: UserTenantEntity[];
 }

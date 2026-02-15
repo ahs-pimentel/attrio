@@ -5,12 +5,36 @@ import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '@attrio/contracts';
+import { UserEntity } from './user.entity';
 
 interface RequestUser {
   id: string;
   userId: string;
   tenantId: string;
   role: UserRole;
+}
+
+function mapUserToResponse(user: UserEntity): UserResponseDto {
+  return {
+    id: user.id,
+    supabaseUserId: user.supabaseUserId,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    tenantId: user.tenantId,
+    tenant: user.tenant ? {
+      id: user.tenant.id,
+      name: user.tenant.name,
+      slug: user.tenant.slug,
+    } : null,
+    tenants: (user.userTenants || []).map(ut => ({
+      id: ut.tenant.id,
+      name: ut.tenant.name,
+      slug: ut.tenant.slug,
+    })),
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }
 
 @ApiTags('Users')
@@ -24,21 +48,7 @@ export class UsersController {
   @ApiOperation({ summary: 'List all users' })
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.usersService.findAll();
-    return users.map(user => ({
-      id: user.id,
-      supabaseUserId: user.supabaseUserId,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      tenantId: user.tenantId,
-      tenant: user.tenant ? {
-        id: user.tenant.id,
-        name: user.tenant.name,
-        slug: user.tenant.slug
-      } : null,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }));
+    return users.map(mapUserToResponse);
   }
 
   @Get(':id')
@@ -49,21 +59,7 @@ export class UsersController {
     if (!user) {
       throw new NotFoundException('Usuario nao encontrado');
     }
-    return {
-      id: user.id,
-      supabaseUserId: user.supabaseUserId,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      tenantId: user.tenantId,
-      tenant: user.tenant ? {
-        id: user.tenant.id,
-        name: user.tenant.name,
-        slug: user.tenant.slug
-      } : null,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    return mapUserToResponse(user);
   }
 
   @Put(':id')
@@ -81,20 +77,6 @@ export class UsersController {
       throw new NotFoundException('Usuario nao encontrado');
     }
 
-    return {
-      id: updated.id,
-      supabaseUserId: updated.supabaseUserId,
-      email: updated.email,
-      name: updated.name,
-      role: updated.role,
-      tenantId: updated.tenantId,
-      tenant: updated.tenant ? {
-        id: updated.tenant.id,
-        name: updated.tenant.name,
-        slug: updated.tenant.slug
-      } : null,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-    };
+    return mapUserToResponse(updated);
   }
 }

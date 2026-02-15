@@ -78,7 +78,10 @@ function UserGroupIcon({ className }: { className?: string }) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, signOut, profile, isAdmin, isSyndic } = useAuthContext();
+  const {
+    user, signOut, profile, isAdmin, isSyndic,
+    availableTenants, switchTenant, switchingTenant, currentTenantName,
+  } = useAuthContext();
 
   // Itens de navegação baseados nas permissões
   const navigation = [
@@ -115,6 +118,46 @@ export function Sidebar() {
           style={{ filter: 'brightness(0) invert(1)' }}
         />
       </div>
+
+      {/* Tenant Switcher */}
+      {availableTenants.length > 1 && (
+        <div className="px-4 py-3 border-b border-white/10">
+          <label className="block text-xs font-medium text-white/60 mb-1.5">
+            Condominio
+          </label>
+          <select
+            value={profile?.tenantId || ''}
+            onChange={(e) => {
+              if (e.target.value && e.target.value !== profile?.tenantId) {
+                switchTenant(e.target.value);
+              }
+            }}
+            disabled={switchingTenant}
+            className="w-full px-3 py-2 text-sm bg-white/10 text-white border border-white/20 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-wait"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+              backgroundPosition: 'right 0.5rem center',
+              backgroundSize: '1.5em 1.5em',
+              backgroundRepeat: 'no-repeat',
+              paddingRight: '2.5rem',
+            }}
+          >
+            {availableTenants.map((tenant) => (
+              <option key={tenant.id} value={tenant.id} className="text-gray-900 bg-white">
+                {tenant.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {availableTenants.length === 1 && (
+        <div className="px-4 py-3 border-b border-white/10">
+          <p className="text-xs font-medium text-white/60">Condominio</p>
+          <p className="text-sm text-white font-medium truncate mt-0.5">
+            {currentTenantName}
+          </p>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">

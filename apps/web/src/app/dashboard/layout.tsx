@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import { Sidebar } from '@/components/Sidebar';
+import { TenantSelectorModal } from '@/components/TenantSelectorModal';
 
 export default function DashboardLayout({
   children,
@@ -34,6 +35,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-attrio-gray-50">
       <Sidebar />
+      <TenantSelectorModal />
       <main className="ml-64 p-8">
         {children}
       </main>
