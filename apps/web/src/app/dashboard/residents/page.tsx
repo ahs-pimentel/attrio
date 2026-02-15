@@ -329,140 +329,144 @@ export default function ResidentsPage() {
               Nenhum morador cadastrado
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nome
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Unidade
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contato
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acoes
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {residents.map((resident) => (
-                  <tr key={resident.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">
-                      <button
-                        onClick={() => handleViewResident(resident.id)}
-                        className="text-blue-600 hover:text-blue-800 hover:underline text-left"
-                      >
-                        {resident.fullName}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                      {getUnitIdentifier(resident.unitId)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                      {resident.type === 'OWNER' ? 'Proprietario' : 'Inquilino'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                      <div className="text-sm">{resident.email}</div>
-                      <div className="text-xs text-gray-400">{resident.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(resident.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleToggleResidentStatus(resident)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        {resident.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nome
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Unidade
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contato
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acoes
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {residents.map((resident) => (
+                    <tr key={resident.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap font-medium">
+                        <button
+                          onClick={() => handleViewResident(resident.id)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                        >
+                          {resident.fullName}
+                        </button>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-gray-500">
+                        {getUnitIdentifier(resident.unitId)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-gray-500">
+                        {resident.type === 'OWNER' ? 'Proprietario' : 'Inquilino'}
+                      </td>
+                      <td className="px-4 py-4 text-gray-500">
+                        <div className="text-sm truncate max-w-[200px]">{resident.email}</div>
+                        <div className="text-xs text-gray-400">{resident.phone}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {getStatusBadge(resident.status)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
+                        <button
+                          onClick={() => handleToggleResidentStatus(resident)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          {resident.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )
         ) : invites.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             Nenhum convite enviado
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nome
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Unidade
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Expira em
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acoes
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {invites.map((invite) => (
-                <tr key={invite.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                    {invite.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {getUnitIdentifier(invite.unitId)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {invite.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {formatDate(invite.expiresAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(invite.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-4">
-                    {invite.status === 'PENDING' && (
-                      <>
-                        <button
-                          onClick={() => handleCopyLink(getInviteLink(invite.token))}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Copiar Link
-                        </button>
-                        <button
-                          onClick={() => handleResendInvite(invite.id)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Reenviar
-                        </button>
-                        <button
-                          onClick={() => handleCancelInvite(invite.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Cancelar
-                        </button>
-                      </>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nome
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Unidade
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Expira em
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acoes
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {invites.map((invite) => (
+                  <tr key={invite.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap font-medium text-gray-900">
+                      {invite.name}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-gray-500">
+                      {getUnitIdentifier(invite.unitId)}
+                    </td>
+                    <td className="px-4 py-4 text-gray-500">
+                      <span className="truncate block max-w-[180px]">{invite.email}</span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-gray-500">
+                      {formatDate(invite.expiresAt)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {getStatusBadge(invite.status)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm space-x-2">
+                      {invite.status === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={() => handleCopyLink(getInviteLink(invite.token))}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Copiar
+                          </button>
+                          <button
+                            onClick={() => handleResendInvite(invite.id)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Reenviar
+                          </button>
+                          <button
+                            onClick={() => handleCancelInvite(invite.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 
