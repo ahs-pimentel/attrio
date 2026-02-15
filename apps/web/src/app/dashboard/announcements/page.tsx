@@ -17,7 +17,7 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     [{ color: [] }, { background: [] }],
-    ['link'],
+    ['link', 'image'],
     ['clean'],
   ],
 };
