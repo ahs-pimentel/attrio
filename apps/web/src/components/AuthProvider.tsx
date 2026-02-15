@@ -100,16 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setSwitchingTenant(true);
       await authApi.switchTenant(tenantId);
-      await loadProfile();
-      setShowTenantSelector(false);
       sessionStorage.setItem('tenantSelected', 'true');
+      window.location.reload();
     } catch (error) {
       console.error('Erro ao trocar condominio:', error);
-      throw error;
-    } finally {
       setSwitchingTenant(false);
+      throw error;
     }
-  }, [loadProfile]);
+  }, []);
 
   const isAdmin = profile?.role === 'SAAS_ADMIN';
   const isSyndic = profile?.role === 'SYNDIC' || isAdmin;
