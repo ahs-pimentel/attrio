@@ -15,7 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { OtpService } from './otp.service';
 import { ValidateOtpDto, OtpResponseDto, OtpValidationResultDto } from './dto/otp.dto';
-import { RequireTenant, Roles, CurrentUser } from '../auth';
+import { RequireTenant, Roles, CurrentUser, Public } from '../auth';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {
@@ -61,6 +61,7 @@ export class OtpController {
   // ==================== Validacao Publica de OTP ====================
 
   @Post('checkin/validate-otp/:token')
+  @Public()
   @ApiOperation({ summary: 'Validar OTP pelo token de check-in (publico)' })
   @ApiParam({ name: 'token', description: 'Token de check-in da assembleia' })
   @ApiResponse({ status: 200, type: OtpValidationResultDto })

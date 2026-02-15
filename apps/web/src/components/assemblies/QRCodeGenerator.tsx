@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { QrCodeData } from '@/lib/api';
+import { otpApi } from '@/lib/api';
+
+interface OtpData {
+  otp: string;
+  expiresAt: string;
+  remainingSeconds: number;
+}
 
 interface QRCodeGeneratorProps {
   assemblyId: string;
@@ -25,10 +32,55 @@ export function QRCodeGenerator({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localQrData, setLocalQrData] = useState<QrCodeData | null>(qrCodeData);
+  const [otpData, setOtpData] = useState<OtpData | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     setLocalQrData(qrCodeData);
   }, [qrCodeData]);
+
+  // Countdown timer para OTP
+  useEffect(() => {
+    if (!otpData) {
+      setCountdown(0);
+      return;
+    }
+
+    const expiresAt = new Date(otpData.expiresAt).getTime();
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      setCountdown(remaining);
+      if (remaining <= 0) {
+        setOtpData(null);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [otpData]);
+
+  const generateOtp = useCallback(async () => {
+    try {
+      setOtpLoading(true);
+      const data = await otpApi.generateCheckinOtp(assemblyId);
+      setOtpData(data);
+    } catch (err) {
+      console.error('Erro ao gerar OTP:', err);
+    } finally {
+      setOtpLoading(false);
+    }
+  }, [assemblyId]);
+
+  // Buscar OTP existente ao montar (caso ja tenha sido gerado)
+  useEffect(() => {
+    if (localQrData) {
+      otpApi.getCheckinOtp(assemblyId).then(data => {
+        if (data) setOtpData(data);
+      }).catch(() => {});
+    }
+  }, [assemblyId, localQrData]);
 
   const handleGenerate = async () => {
     try {
@@ -36,6 +88,8 @@ export function QRCodeGenerator({
       setError(null);
       const data = await onGenerate();
       setLocalQrData(data);
+      // Auto-gerar OTP junto com o QR Code
+      await generateOtp();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao gerar QR Code');
     } finally {
@@ -53,7 +107,6 @@ export function QRCodeGenerator({
       await navigator.clipboard.writeText(localQrData.checkinUrl);
       alert('Link copiado para a area de transferencia!');
     } catch {
-      // Fallback para navegadores antigos
       const input = document.createElement('input');
       input.value = localQrData.checkinUrl;
       document.body.appendChild(input);
@@ -62,6 +115,12 @@ export function QRCodeGenerator({
       document.body.removeChild(input);
       alert('Link copiado!');
     }
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -82,11 +141,52 @@ export function QRCodeGenerator({
               Gere um QR Code para permitir que participantes facam check-in na assembleia usando seus dispositivos moveis.
             </p>
             <Button onClick={handleGenerate} loading={loading}>
-              Gerar QR Code
+              Iniciar Check-in
             </Button>
           </div>
         ) : (
           <div className="space-y-6">
+            {/* OTP Display */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-center text-white">
+              <p className="text-sm font-medium text-blue-100 mb-2">
+                Codigo de Check-in (OTP)
+              </p>
+              {otpData ? (
+                <>
+                  <p className="text-5xl font-mono font-bold tracking-[0.3em] mb-3">
+                    {otpData.otp}
+                  </p>
+                  <p className={`text-sm ${countdown <= 60 ? 'text-red-200' : 'text-blue-200'}`}>
+                    Expira em {formatCountdown(countdown)}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={generateOtp}
+                    loading={otpLoading}
+                    className="mt-3 text-white border-white/30 hover:bg-white/10"
+                  >
+                    Gerar Novo Codigo
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg text-blue-200 mb-3">Nenhum codigo ativo</p>
+                  <Button
+                    onClick={generateOtp}
+                    loading={otpLoading}
+                    className="bg-white text-blue-700 hover:bg-blue-50"
+                  >
+                    Gerar Codigo OTP
+                  </Button>
+                </>
+              )}
+            </div>
+
+            <p className="text-center text-sm text-gray-500">
+              Exiba este codigo para os participantes digitarem na tela de check-in
+            </p>
+
             {/* QR Code */}
             <div className="flex justify-center print:p-8">
               <div className="bg-white p-6 rounded-xl border-2 border-gray-200 print:border-4 print:border-black">
@@ -160,7 +260,7 @@ export function QRCodeGenerator({
                     d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
                   />
                 </svg>
-                Gerar Novo
+                Gerar Novo QR
               </Button>
             </div>
 
@@ -168,10 +268,10 @@ export function QRCodeGenerator({
             <div className="bg-blue-50 rounded-lg p-4 print:hidden">
               <h4 className="font-medium text-blue-900 mb-2">Instrucoes</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>1. Exiba o QR Code em um local visivel na entrada da assembleia</li>
-                <li>2. Os participantes devem escanear com a camera do celular</li>
-                <li>3. Eles serao redirecionados para a pagina de check-in</li>
-                <li>4. Basta informar a unidade e confirmar presenca</li>
+                <li>1. Compartilhe o link ou QR Code com os participantes</li>
+                <li>2. Informe o codigo OTP exibido acima para digitarem na tela de check-in</li>
+                <li>3. O codigo OTP expira a cada 10 minutos - gere um novo quando necessario</li>
+                <li>4. Os participantes informam a unidade e o codigo para confirmar presenca</li>
               </ul>
             </div>
           </div>
