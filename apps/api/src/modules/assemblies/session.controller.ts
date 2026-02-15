@@ -20,6 +20,7 @@ import { VotesService } from './votes.service';
 import { OtpService } from './otp.service';
 import { Public } from '../auth';
 import { VoteChoice, ParticipantApprovalStatus, AgendaItemStatus, AssemblyStatus } from '@attrio/contracts';
+import { IsString, IsUUID, IsEnum } from 'class-validator';
 
 // ==================== DTOs ====================
 
@@ -54,8 +55,13 @@ class ParticipantStatusDto {
 }
 
 class CastVoteRequestDto {
+  @IsUUID()
   agendaItemId: string;
+
+  @IsString()
   otp: string;
+
+  @IsEnum(VoteChoice)
   choice: VoteChoice;
 }
 
