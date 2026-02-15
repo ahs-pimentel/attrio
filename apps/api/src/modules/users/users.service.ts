@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { UserTenantEntity } from './user-tenant.entity';
 import { UserRole } from '@attrio/contracts';
 import { UpdateUserDto } from './dto/user.dto';
+import { supabaseAdmin } from '../../core/supabase/supabase-admin';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -227,5 +230,24 @@ export class UsersService {
 
   async removeUserTenant(userId: string, tenantId: string): Promise<void> {
     await this.userTenantRepository.delete({ userId, tenantId });
+  }
+
+  async resetPassword(id: string, newPassword: string): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado');
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      user.supabaseUserId,
+      { password: newPassword },
+    );
+
+    if (error) {
+      this.logger.error(`Erro ao resetar senha do usuario ${id}: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    this.logger.log(`Senha do usuario ${user.email} resetada com sucesso`);
   }
 }

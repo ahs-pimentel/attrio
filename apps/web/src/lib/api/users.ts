@@ -25,4 +25,6 @@ export const usersApi = {
   getById: (id: string) => apiClient.get<UserResponse>(`/users/${id}`),
   update: (id: string, data: UpdateUserDto) =>
     apiClient.put<UserResponse>(`/users/${id}`, data),
+  resetPassword: (id: string, password: string) =>
+    apiClient.post<{ message: string }>(`/users/${id}/reset-password`, { password }),
 };

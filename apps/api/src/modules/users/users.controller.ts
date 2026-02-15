@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, Body, ParseUUIDPipe, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Put, Post, Param, Body, ParseUUIDPipe, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
@@ -78,5 +78,16 @@ export class UsersController {
     }
 
     return mapUserToResponse(updated);
+  }
+
+  @Post(':id/reset-password')
+  @Roles(UserRole.SAAS_ADMIN)
+  @ApiOperation({ summary: 'Reset user password' })
+  async resetPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { password: string },
+  ): Promise<{ message: string }> {
+    await this.usersService.resetPassword(id, body.password);
+    return { message: 'Senha redefinida com sucesso' };
   }
 }

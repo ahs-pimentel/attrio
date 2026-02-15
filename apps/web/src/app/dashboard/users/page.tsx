@@ -14,6 +14,11 @@ export default function UsersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetUser, setResetUser] = useState<UserResponse | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -82,6 +87,29 @@ export default function UsersPage() {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar usuario');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = (user: UserResponse) => {
+    setResetUser(user);
+    setNewPassword('');
+    setResetSuccess(null);
+    setResetModalOpen(true);
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUser || !newPassword) return;
+
+    setResetSubmitting(true);
+    try {
+      await usersApi.resetPassword(resetUser.id, newPassword);
+      setResetSuccess(`Senha de ${resetUser.name} redefinida com sucesso`);
+      setNewPassword('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao redefinir senha');
+    } finally {
+      setResetSubmitting(false);
     }
   };
 
@@ -186,13 +214,22 @@ export default function UsersPage() {
                       {formatDate(user.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleEdit(user)}
-                      >
-                        Editar
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleEdit(user)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleResetPassword(user)}
+                        >
+                          Redefinir Senha
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -201,6 +238,75 @@ export default function UsersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reset Password Modal */}
+      {resetModalOpen && resetUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Redefinir Senha</h2>
+              <button
+                onClick={() => {
+                  setResetModalOpen(false);
+                  setResetUser(null);
+                  setResetSuccess(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Definir nova senha para <strong>{resetUser.name}</strong> ({resetUser.email})
+            </p>
+
+            {resetSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800 text-sm">{resetSuccess}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleResetSubmit}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nova Senha
+                </label>
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Digite a nova senha"
+                  minLength={6}
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Minimo 6 caracteres. Comunique a nova senha ao usuario.
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setResetModalOpen(false);
+                    setResetUser(null);
+                    setResetSuccess(null);
+                  }}
+                  disabled={resetSubmitting}
+                >
+                  Fechar
+                </Button>
+                <Button type="submit" disabled={resetSubmitting || !newPassword}>
+                  {resetSubmitting ? 'Redefinindo...' : 'Redefinir Senha'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editModalOpen && editingUser && (
