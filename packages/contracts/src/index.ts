@@ -81,6 +81,12 @@ export enum VoteChoice {
   ABSTENTION = 'ABSTENTION',
 }
 
+/** Tipo de comunicado */
+export enum AnnouncementType {
+  GENERAL = 'GENERAL',
+  ASSEMBLY = 'ASSEMBLY',
+}
+
 /** Status de aprovacao do participante (procuracao) */
 export enum ParticipantApprovalStatus {
   /** Participante direto ou aprovado */

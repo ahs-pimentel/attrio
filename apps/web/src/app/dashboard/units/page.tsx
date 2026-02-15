@@ -9,7 +9,6 @@ export default function UnitsPage() {
   const [units, setUnits] = useState<UnitResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ block: '', number: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -39,7 +38,6 @@ export default function UnitsPage() {
         number: formData.number,
       });
       setFormData({ block: '', number: '' });
-      setShowForm(false);
       await loadUnits();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar unidade');
@@ -78,9 +76,6 @@ export default function UnitsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Unidades</h1>
           <p className="text-gray-600">Gerencie as unidades do condominio</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : 'Nova Unidade'}
-        </Button>
       </div>
 
       {error && (
@@ -89,8 +84,7 @@ export default function UnitsPage() {
         </div>
       )}
 
-      {showForm && (
-        <Card className="mb-6">
+      <Card className="mb-6">
           <CardHeader>
             <CardTitle>Nova Unidade</CardTitle>
           </CardHeader>
@@ -128,7 +122,6 @@ export default function UnitsPage() {
             </form>
           </CardContent>
         </Card>
-      )}
 
       <Card padding="none">
         {loading ? (

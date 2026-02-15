@@ -65,3 +65,10 @@ export {
   type MinutesResponse,
   type UpdateMinutesDto,
 } from './assemblies';
+
+export {
+  announcementsApi,
+  type AnnouncementResponse,
+  type CreateAnnouncementDto as CreateAnnouncementInput,
+  type UpdateAnnouncementDto as UpdateAnnouncementInput,
+} from './announcements';

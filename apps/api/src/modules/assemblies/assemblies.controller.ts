@@ -18,6 +18,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { AssembliesService } from './assemblies.service';
+import { AnnouncementsService } from '../announcements/announcements.service';
 import {
   CreateAssemblyDto,
   UpdateAssemblyDto,
@@ -28,6 +29,7 @@ import { RequireTenant, Roles, CurrentUser } from '../auth';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {
+  userId: string;
   tenantId: string | null;
   role: UserRole;
 }
@@ -37,7 +39,10 @@ interface RequestUser {
 @Controller('assemblies')
 @RequireTenant()
 export class AssembliesController {
-  constructor(private readonly assembliesService: AssembliesService) {}
+  constructor(
+    private readonly assembliesService: AssembliesService,
+    private readonly announcementsService: AnnouncementsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todas as assembleias do condominio' })
@@ -84,7 +89,23 @@ export class AssembliesController {
     @Body() dto: CreateAssemblyDto,
     @CurrentUser() user: RequestUser,
   ): Promise<AssemblyResponseDto> {
-    return this.assembliesService.create(user.tenantId!, dto);
+    const assembly = await this.assembliesService.create(user.tenantId!, dto);
+
+    // Cria comunicado automatico para a assembleia
+    try {
+      await this.announcementsService.createFromAssembly(
+        user.tenantId!,
+        assembly.title,
+        assembly.description,
+        assembly.id,
+        assembly.scheduledAt,
+        user.userId,
+      );
+    } catch (err) {
+      // Nao falha a criacao da assembleia se o comunicado falhar
+    }
+
+    return assembly;
   }
 
   @Put(':id')

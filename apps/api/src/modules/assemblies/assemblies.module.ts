@@ -8,6 +8,7 @@ import {
   AssemblyMinutesEntity,
 } from './entities';
 import { UnitEntity } from '../units/unit.entity';
+import { AnnouncementsModule } from '../announcements/announcements.module';
 import { AssembliesService } from './assemblies.service';
 import { AgendaItemsService } from './agenda-items.service';
 import { ParticipantsService } from './participants.service';
@@ -37,6 +38,7 @@ import { SessionController } from './session.controller';
       AssemblyMinutesEntity,
       UnitEntity,
     ]),
+    AnnouncementsModule,
   ],
   controllers: [
     AssembliesController,
