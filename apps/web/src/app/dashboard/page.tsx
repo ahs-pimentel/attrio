@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { useAuthContext } from '@/components/AuthProvider';
 import { unitsApi, residentsApi, assembliesApi } from '@/lib/api';
 
 interface DashboardStats {
@@ -12,6 +13,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const { isSyndic } = useAuthContext();
   const [stats, setStats] = useState<DashboardStats>({
     totalUnits: 0,
     totalResidents: 0,
@@ -45,12 +47,16 @@ export default function DashboardPage() {
     loadStats();
   }, []);
 
-  const statCards = [
-    { title: 'Total de Unidades', value: stats.totalUnits, color: 'bg-blue-500' },
-    { title: 'Moradores Ativos', value: stats.activeResidents, color: 'bg-green-500' },
-    { title: 'Total de Moradores', value: stats.totalResidents, color: 'bg-purple-500' },
-    { title: 'Assembleias Proximas', value: stats.upcomingAssemblies, color: 'bg-orange-500' },
-  ];
+  const statCards = isSyndic
+    ? [
+        { title: 'Total de Unidades', value: stats.totalUnits, color: 'bg-blue-500' },
+        { title: 'Moradores Ativos', value: stats.activeResidents, color: 'bg-green-500' },
+        { title: 'Total de Moradores', value: stats.totalResidents, color: 'bg-purple-500' },
+        { title: 'Assembleias Proximas', value: stats.upcomingAssemblies, color: 'bg-orange-500' },
+      ]
+    : [
+        { title: 'Assembleias Proximas', value: stats.upcomingAssemblies, color: 'bg-orange-500' },
+      ];
 
   return (
     <div>
@@ -88,58 +94,60 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Acoes Rapidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <a
-                href="/dashboard/units"
-                className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Cadastrar Unidade</p>
-                  <p className="text-sm text-gray-500">Adicionar nova unidade ao condominio</p>
-                </div>
-              </a>
-              <a
-                href="/dashboard/assemblies"
-                className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mr-3">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Agendar Assembleia</p>
-                  <p className="text-sm text-gray-500">Criar nova assembleia</p>
-                </div>
-              </a>
-              <a
-                href="/dashboard/residents"
-                className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">Enviar Convite</p>
-                  <p className="text-sm text-gray-500">Convidar novo morador</p>
-                </div>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
+      <div className={`mt-8 grid grid-cols-1 ${isSyndic ? 'lg:grid-cols-2' : ''} gap-6`}>
+        {isSyndic && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Acoes Rapidas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <a
+                  href="/dashboard/units"
+                  className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Cadastrar Unidade</p>
+                    <p className="text-sm text-gray-500">Adicionar nova unidade ao condominio</p>
+                  </div>
+                </a>
+                <a
+                  href="/dashboard/assemblies"
+                  className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Agendar Assembleia</p>
+                    <p className="text-sm text-gray-500">Criar nova assembleia</p>
+                  </div>
+                </a>
+                <a
+                  href="/dashboard/residents"
+                  className="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mr-3">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Enviar Convite</p>
+                    <p className="text-sm text-gray-500">Convidar novo morador</p>
+                  </div>
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
