@@ -18,6 +18,7 @@ import { ResidentsModule } from './modules/residents';
 import { AssembliesModule } from './modules/assemblies';
 import { SeedModule } from './modules/seed';
 import { getDatabaseConfig } from './core/db/database.config';
+import { EmailModule } from './core/email/email.module';
 
 @Module({
   imports: [
@@ -36,6 +37,9 @@ import { getDatabaseConfig } from './core/db/database.config';
 
     // Repositorio global para UserLoaderGuard (guards globais)
     TypeOrmModule.forFeature([TenantEntity]),
+
+    // Core
+    EmailModule,
 
     // Modulos da aplicacao
     AuthModule,

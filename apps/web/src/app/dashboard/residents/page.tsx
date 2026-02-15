@@ -172,7 +172,7 @@ export default function ResidentsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-green-700 mb-3">
-              Compartilhe o link abaixo com o morador para que ele possa completar o cadastro:
+              Um email de convite foi enviado para o morador. Caso precise, copie o link abaixo:
             </p>
             <div className="flex items-center gap-2">
               <input

@@ -21,6 +21,7 @@ import { InviteStatus, ResidentStatus } from '@attrio/contracts';
 import { UsersService } from '../users/users.service';
 import { UnitsService } from '../units/units.service';
 import { TenantsService } from '../tenants/tenants.service';
+import { EmailService } from '../../core/email/email.service';
 import { supabaseAdmin } from '../../core/supabase/supabase-admin';
 
 @Injectable()
@@ -43,11 +44,12 @@ export class InvitesService {
     private readonly usersService: UsersService,
     private readonly unitsService: UnitsService,
     private readonly tenantsService: TenantsService,
+    private readonly emailService: EmailService,
   ) {}
 
   async createInvite(tenantId: string, dto: CreateInviteDto): Promise<ResidentInviteEntity> {
     // Verificar se a unidade existe
-    await this.unitsService.findById(dto.unitId, tenantId);
+    const unit = await this.unitsService.findById(dto.unitId, tenantId);
 
     // Verificar se já existe um convite pendente para esse email/unidade
     const existingInvite = await this.inviteRepository.findOne({
@@ -79,7 +81,23 @@ export class InvitesService {
       expiresAt,
     });
 
-    return this.inviteRepository.save(invite);
+    const savedInvite = await this.inviteRepository.save(invite);
+
+    // Enviar email de convite
+    const tenant = await this.tenantsService.findById(tenantId);
+    await this.emailService.sendInviteEmail({
+      to: dto.email,
+      residentName: dto.name,
+      tenantName: tenant.name,
+      unitIdentifier: unit.identifier,
+      inviteToken: token,
+    });
+
+    // Retornar com relacoes
+    return this.inviteRepository.findOne({
+      where: { id: savedInvite.id },
+      relations: ['unit'],
+    }) as Promise<ResidentInviteEntity>;
   }
 
   async findAllByTenant(tenantId: string): Promise<ResidentInviteEntity[]> {
@@ -225,6 +243,7 @@ export class InvitesService {
   async resendInvite(id: string, tenantId: string): Promise<ResidentInviteEntity> {
     const invite = await this.inviteRepository.findOne({
       where: { id, tenantId },
+      relations: ['unit'],
     });
 
     if (!invite) {
@@ -241,7 +260,19 @@ export class InvitesService {
     invite.expiresAt.setDate(invite.expiresAt.getDate() + 7);
     invite.status = InviteStatus.PENDING;
 
-    return this.inviteRepository.save(invite);
+    const savedInvite = await this.inviteRepository.save(invite);
+
+    // Reenviar email
+    const tenant = await this.tenantsService.findById(tenantId);
+    await this.emailService.sendInviteEmail({
+      to: invite.email,
+      residentName: invite.name,
+      tenantName: tenant.name,
+      unitIdentifier: invite.unit?.identifier || '',
+      inviteToken: invite.token,
+    });
+
+    return savedInvite;
   }
 
   async cancelInvite(id: string, tenantId: string): Promise<void> {
