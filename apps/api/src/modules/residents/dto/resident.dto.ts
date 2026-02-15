@@ -138,6 +138,17 @@ export class CompleteResidentRegistrationDto {
   @MaxLength(255)
   fullName: string;
 
+  @ApiPropertyOptional({ description: 'Email atualizado (se diferente do convite)' })
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'Telefone atualizado (se diferente do convite)' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  phone?: string;
+
   @ApiPropertyOptional({ example: '123456789' })
   @IsString()
   @IsOptional()

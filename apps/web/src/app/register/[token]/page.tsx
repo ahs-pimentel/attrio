@@ -24,6 +24,8 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     type: 'OWNER' as ResidentType,
     fullName: '',
+    email: '',
+    phone: '',
     rg: '',
     cpf: '',
     moveInDate: '',
@@ -48,6 +50,8 @@ export default function RegisterPage() {
           setFormData((prev) => ({
             ...prev,
             fullName: response.invite!.name,
+            email: response.invite!.email,
+            phone: response.invite!.phone,
           }));
         } else {
           setError(response.error || 'Convite invalido ou expirado');
@@ -168,6 +172,8 @@ export default function RegisterPage() {
         inviteToken: token,
         type: formData.type,
         fullName: formData.fullName,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
         rg: formData.rg || undefined,
         cpf: formData.cpf || undefined,
         moveInDate: formData.moveInDate || undefined,
@@ -327,6 +333,26 @@ export default function RegisterPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

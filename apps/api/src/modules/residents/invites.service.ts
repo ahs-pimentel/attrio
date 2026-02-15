@@ -149,9 +149,13 @@ export class InvitesService {
       throw new BadRequestException(error || 'Convite invalido');
     }
 
+    // Usar email/phone do DTO se fornecidos, senao do convite
+    const finalEmail = dto.email || invite.email;
+    const finalPhone = dto.phone || invite.phone;
+
     // Criar usuário no Supabase
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: invite.email,
+      email: finalEmail,
       password: dto.password,
       email_confirm: true,
       user_metadata: {
@@ -166,7 +170,7 @@ export class InvitesService {
     // Criar usuário no banco local
     const dbUser = await this.usersService.createOrUpdate({
       supabaseUserId: authUser.user.id,
-      email: invite.email,
+      email: finalEmail,
       name: dto.fullName,
       tenantId: invite.tenantId,
     });
@@ -178,8 +182,8 @@ export class InvitesService {
       userId: dbUser.id,
       type: dto.type,
       fullName: dto.fullName,
-      email: invite.email,
-      phone: invite.phone,
+      email: finalEmail,
+      phone: finalPhone,
       rg: dto.rg,
       cpf: dto.cpf,
       moveInDate: dto.moveInDate ? new Date(dto.moveInDate) : null,

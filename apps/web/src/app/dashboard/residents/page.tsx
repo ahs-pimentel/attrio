@@ -23,6 +23,8 @@ export default function ResidentsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [createdInviteLink, setCreatedInviteLink] = useState<string | null>(null);
+  const [selectedResident, setSelectedResident] = useState<ResidentResponse | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const loadData = async () => {
     try {
@@ -106,6 +108,34 @@ export default function ResidentsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao alterar status');
     }
+  };
+
+  const handleViewResident = async (id: string) => {
+    setLoadingDetail(true);
+    try {
+      const resident = await residentsApi.getById(id);
+      setSelectedResident(resident);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar detalhes');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const relationshipLabels: Record<string, string> = {
+    SPOUSE: 'Conjuge',
+    CHILD: 'Filho(a)',
+    PARENT: 'Pai/Mae',
+    SIBLING: 'Irmao(a)',
+    OTHER: 'Outro',
+  };
+
+  const petTypeLabels: Record<string, string> = {
+    DOG: 'Cachorro',
+    CAT: 'Gato',
+    BIRD: 'Passaro',
+    FISH: 'Peixe',
+    OTHER: 'Outro',
   };
 
   const getUnitIdentifier = (unitId: string) => {
@@ -325,8 +355,13 @@ export default function ResidentsPage() {
               <tbody className="divide-y divide-gray-200">
                 {residents.map((resident) => (
                   <tr key={resident.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                      {resident.fullName}
+                    <td className="px-6 py-4 whitespace-nowrap font-medium">
+                      <button
+                        onClick={() => handleViewResident(resident.id)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline text-left"
+                      >
+                        {resident.fullName}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">
                       {getUnitIdentifier(resident.unitId)}
@@ -430,6 +465,261 @@ export default function ResidentsPage() {
           </table>
         )}
       </Card>
+
+      {/* Modal de detalhes do morador */}
+      {(selectedResident || loadingDetail) && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl my-8">
+            {loadingDetail ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-500">Carregando detalhes...</p>
+              </div>
+            ) : selectedResident && (
+              <>
+                {/* Header */}
+                <div className="flex justify-between items-start p-6 border-b border-gray-200">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">{selectedResident.fullName}</h2>
+                    <p className="text-sm text-gray-500">
+                      Unidade {getUnitIdentifier(selectedResident.unitId)} &bull; {selectedResident.type === 'OWNER' ? 'Proprietario' : 'Inquilino'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {getStatusBadge(selectedResident.status)}
+                    <button
+                      onClick={() => setSelectedResident(null)}
+                      className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* Dados Pessoais */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Dados Pessoais</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <span className="text-xs text-gray-500">Email</span>
+                        <p className="text-sm font-medium text-gray-900">{selectedResident.email || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">Telefone</span>
+                        <p className="text-sm font-medium text-gray-900">{selectedResident.phone || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">CPF</span>
+                        <p className="text-sm font-medium text-gray-900">{selectedResident.cpf || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">RG</span>
+                        <p className="text-sm font-medium text-gray-900">{selectedResident.rg || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">Data de Mudanca</span>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedResident.moveInDate ? formatDate(selectedResident.moveInDate) : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500">Consentimento LGPD</span>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedResident.dataConsent ? 'Sim' : 'Nao'}
+                          {selectedResident.dataConsentAt && ` (${formatDate(selectedResident.dataConsentAt)})`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dados do Proprietario (se inquilino) */}
+                  {selectedResident.type === 'TENANT' && (selectedResident.landlordName || selectedResident.landlordPhone || selectedResident.landlordEmail) && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Dados do Proprietario</h3>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-xs text-gray-500">Nome</span>
+                          <p className="text-sm font-medium text-gray-900">{selectedResident.landlordName || '-'}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500">Telefone</span>
+                          <p className="text-sm font-medium text-gray-900">{selectedResident.landlordPhone || '-'}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500">Email</span>
+                          <p className="text-sm font-medium text-gray-900">{selectedResident.landlordEmail || '-'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contatos de Emergencia */}
+                  {selectedResident.emergencyContacts && selectedResident.emergencyContacts.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                        Contatos de Emergencia ({selectedResident.emergencyContacts.length})
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Nome</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Telefone</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">WhatsApp</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedResident.emergencyContacts.map((c) => (
+                            <tr key={c.id} className="border-b border-gray-100">
+                              <td className="py-2 text-gray-900">{c.name}</td>
+                              <td className="py-2 text-gray-900">{c.phone}</td>
+                              <td className="py-2">
+                                <span className={`inline-flex px-2 py-0.5 text-xs rounded-full ${c.isWhatsApp ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                  {c.isWhatsApp ? 'Sim' : 'Nao'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Membros da Familia */}
+                  {selectedResident.householdMembers && selectedResident.householdMembers.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                        Membros da Familia ({selectedResident.householdMembers.length})
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Nome</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Email</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Documento</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Parentesco</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedResident.householdMembers.map((m) => (
+                            <tr key={m.id} className="border-b border-gray-100">
+                              <td className="py-2 text-gray-900">{m.name}</td>
+                              <td className="py-2 text-gray-900">{m.email || '-'}</td>
+                              <td className="py-2 text-gray-900">{m.document || '-'}</td>
+                              <td className="py-2 text-gray-900">{relationshipLabels[m.relationship] || m.relationship}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Funcionarios */}
+                  {selectedResident.employees && selectedResident.employees.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                        Funcionarios ({selectedResident.employees.length})
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Nome</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Documento</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedResident.employees.map((e) => (
+                            <tr key={e.id} className="border-b border-gray-100">
+                              <td className="py-2 text-gray-900">{e.name}</td>
+                              <td className="py-2 text-gray-900">{e.document || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Veiculos */}
+                  {selectedResident.vehicles && selectedResident.vehicles.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                        Veiculos ({selectedResident.vehicles.length})
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Marca</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Modelo</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Cor</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Placa</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedResident.vehicles.map((v) => (
+                            <tr key={v.id} className="border-b border-gray-100">
+                              <td className="py-2 text-gray-900">{v.brand}</td>
+                              <td className="py-2 text-gray-900">{v.model}</td>
+                              <td className="py-2 text-gray-900">{v.color}</td>
+                              <td className="py-2 font-mono text-gray-900">{v.plate}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Pets */}
+                  {selectedResident.pets && selectedResident.pets.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                        Pets ({selectedResident.pets.length})
+                      </h3>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Nome</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Tipo</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Raca</th>
+                            <th className="text-left py-2 text-xs text-gray-500 font-medium">Cor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedResident.pets.map((p) => (
+                            <tr key={p.id} className="border-b border-gray-100">
+                              <td className="py-2 text-gray-900">{p.name}</td>
+                              <td className="py-2 text-gray-900">{petTypeLabels[p.type] || p.type}</td>
+                              <td className="py-2 text-gray-900">{p.breed || '-'}</td>
+                              <td className="py-2 text-gray-900">{p.color || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Mensagem quando nao ha sub-entidades */}
+                  {(!selectedResident.emergencyContacts || selectedResident.emergencyContacts.length === 0) &&
+                   (!selectedResident.householdMembers || selectedResident.householdMembers.length === 0) &&
+                   (!selectedResident.employees || selectedResident.employees.length === 0) &&
+                   (!selectedResident.vehicles || selectedResident.vehicles.length === 0) &&
+                   (!selectedResident.pets || selectedResident.pets.length === 0) && (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      Nenhuma informacao adicional cadastrada (contatos, membros, veiculos, pets).
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end p-6 border-t border-gray-200">
+                  <Button variant="secondary" onClick={() => setSelectedResident(null)}>
+                    Fechar
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

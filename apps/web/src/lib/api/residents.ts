@@ -118,6 +118,8 @@ export interface CompleteRegistrationDto {
   inviteToken: string;
   type: ResidentType;
   fullName: string;
+  email?: string;
+  phone?: string;
   rg?: string;
   cpf?: string;
   moveInDate?: string;
