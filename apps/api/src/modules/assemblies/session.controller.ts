@@ -141,12 +141,11 @@ export class SessionController {
       throw new UnauthorizedException('Voce nao esta autorizado a votar');
     }
 
-    // Valida OTP da pauta (so se a pauta tiver OTP configurado)
-    const agendaDetails = await this.sessionService.getAgendaItemDetails(sessionToken, dto.agendaItemId);
-    if (agendaDetails.votingOtpRequired) {
-      const otpValid = await this.otpService.validateVotingOtp(dto.agendaItemId, dto.otp);
+    // Valida OTP da assembleia
+    if (dto.otp) {
+      const otpValid = await this.otpService.validateAssemblyOtp(session.assemblyId, dto.otp);
       if (!otpValid) {
-        throw new UnauthorizedException('OTP de votacao invalido ou expirado');
+        throw new UnauthorizedException('OTP invalido ou expirado');
       }
     }
 
