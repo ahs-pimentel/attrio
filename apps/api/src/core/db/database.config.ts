@@ -10,6 +10,7 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   database: configService.get<string>('DATABASE_NAME', 'attrio_db'),
   entities: [__dirname + '/../../modules/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  migrationsRun: true,
   // IMPORTANTE: NUNCA usar synchronize: true em producao
   // Usar migrations para todas as alteracoes de schema
   synchronize: configService.get<string>('NODE_ENV') === 'development',
