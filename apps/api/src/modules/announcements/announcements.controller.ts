@@ -11,7 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AnnouncementsService } from './announcements.service';
+import { AnnouncementsService, EngagementData } from './announcements.service';
 import {
   CreateAnnouncementDto,
   UpdateAnnouncementDto,
@@ -38,7 +38,9 @@ export class AnnouncementsController {
   @ApiResponse({ status: 200, type: [AnnouncementResponseDto] })
   async findAll(@CurrentUser() user: RequestUser): Promise<AnnouncementResponseDto[]> {
     const announcements = await this.announcementsService.findAll(user.tenantId!);
-    return announcements.map((a) => this.toResponse(a));
+    const ids = announcements.map((a) => a.id);
+    const engagementMap = await this.announcementsService.getEngagementBatch(ids, user.userId);
+    return announcements.map((a) => this.toResponse(a, engagementMap.get(a.id)));
   }
 
   @Get(':id')
@@ -49,7 +51,8 @@ export class AnnouncementsController {
     @CurrentUser() user: RequestUser,
   ): Promise<AnnouncementResponseDto> {
     const announcement = await this.announcementsService.findById(id, user.tenantId!);
-    return this.toResponse(announcement);
+    const engagementMap = await this.announcementsService.getEngagementBatch([id], user.userId);
+    return this.toResponse(announcement, engagementMap.get(id));
   }
 
   @Post()
@@ -89,7 +92,29 @@ export class AnnouncementsController {
     await this.announcementsService.delete(id, user.tenantId!);
   }
 
-  private toResponse(a: any): AnnouncementResponseDto {
+  @Post(':id/view')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Registrar visualizacao do comunicado' })
+  async recordView(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestUser,
+  ): Promise<void> {
+    await this.announcementsService.findById(id, user.tenantId!);
+    await this.announcementsService.recordView(id, user.userId);
+  }
+
+  @Post(':id/like')
+  @ApiOperation({ summary: 'Curtir/descurtir comunicado' })
+  async toggleLike(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: RequestUser,
+  ): Promise<{ liked: boolean }> {
+    await this.announcementsService.findById(id, user.tenantId!);
+    const liked = await this.announcementsService.toggleLike(id, user.userId);
+    return { liked };
+  }
+
+  private toResponse(a: any, engagement?: EngagementData): AnnouncementResponseDto {
     return {
       id: a.id,
       tenantId: a.tenantId,
@@ -102,6 +127,9 @@ export class AnnouncementsController {
       createdByName: a.creator?.name || null,
       createdAt: a.createdAt,
       updatedAt: a.updatedAt,
+      viewCount: engagement?.viewCount ?? 0,
+      likeCount: engagement?.likeCount ?? 0,
+      likedByMe: engagement?.likedByMe ?? false,
     };
   }
 }

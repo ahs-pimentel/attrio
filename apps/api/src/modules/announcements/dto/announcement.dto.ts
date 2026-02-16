@@ -69,4 +69,13 @@ export class AnnouncementResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'Numero de visualizacoes' })
+  viewCount: number;
+
+  @ApiProperty({ description: 'Numero de curtidas' })
+  likeCount: number;
+
+  @ApiProperty({ description: 'Se o usuario atual curtiu' })
+  likedByMe: boolean;
 }

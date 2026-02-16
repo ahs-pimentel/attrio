@@ -12,6 +12,9 @@ export interface AnnouncementResponse {
   createdByName: string | null;
   createdAt: string;
   updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  likedByMe: boolean;
 }
 
 export interface CreateAnnouncementDto {
@@ -38,4 +41,9 @@ export const announcementsApi = {
     apiClient.put<AnnouncementResponse>(`/announcements/${id}`, data),
 
   delete: (id: string) => apiClient.delete<void>(`/announcements/${id}`),
+
+  recordView: (id: string) => apiClient.post<void>(`/announcements/${id}/view`),
+
+  toggleLike: (id: string) =>
+    apiClient.post<{ liked: boolean }>(`/announcements/${id}/like`),
 };

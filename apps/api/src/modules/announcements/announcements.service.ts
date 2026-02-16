@@ -2,14 +2,26 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnnouncementEntity } from './announcement.entity';
+import { AnnouncementViewEntity } from './announcement-view.entity';
+import { AnnouncementLikeEntity } from './announcement-like.entity';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto';
 import { AnnouncementType } from '@attrio/contracts';
+
+export interface EngagementData {
+  viewCount: number;
+  likeCount: number;
+  likedByMe: boolean;
+}
 
 @Injectable()
 export class AnnouncementsService {
   constructor(
     @InjectRepository(AnnouncementEntity)
     private readonly announcementRepository: Repository<AnnouncementEntity>,
+    @InjectRepository(AnnouncementViewEntity)
+    private readonly viewRepository: Repository<AnnouncementViewEntity>,
+    @InjectRepository(AnnouncementLikeEntity)
+    private readonly likeRepository: Repository<AnnouncementLikeEntity>,
   ) {}
 
   async findAll(tenantId: string): Promise<AnnouncementEntity[]> {
@@ -87,5 +99,70 @@ ${assemblyDescription ? `<p>${assemblyDescription}</p>` : ''}
   async delete(id: string, tenantId: string): Promise<void> {
     const announcement = await this.findById(id, tenantId);
     await this.announcementRepository.remove(announcement);
+  }
+
+  async recordView(announcementId: string, userId: string): Promise<void> {
+    try {
+      await this.viewRepository.insert({ announcementId, userId });
+    } catch (err: any) {
+      // Ignora duplicate key - usuario ja visualizou
+      if (err.code !== '23505') throw err;
+    }
+  }
+
+  async toggleLike(announcementId: string, userId: string): Promise<boolean> {
+    const existing = await this.likeRepository.findOne({
+      where: { announcementId, userId },
+    });
+    if (existing) {
+      await this.likeRepository.remove(existing);
+      return false;
+    }
+    await this.likeRepository.insert({ announcementId, userId });
+    return true;
+  }
+
+  async getEngagementBatch(
+    announcementIds: string[],
+    userId: string,
+  ): Promise<Map<string, EngagementData>> {
+    const result = new Map<string, EngagementData>();
+    if (announcementIds.length === 0) return result;
+
+    const viewCounts = await this.viewRepository
+      .createQueryBuilder('v')
+      .select('v.announcement_id', 'announcementId')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('v.announcement_id IN (:...ids)', { ids: announcementIds })
+      .groupBy('v.announcement_id')
+      .getRawMany();
+
+    const likeCounts = await this.likeRepository
+      .createQueryBuilder('l')
+      .select('l.announcement_id', 'announcementId')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('l.announcement_id IN (:...ids)', { ids: announcementIds })
+      .groupBy('l.announcement_id')
+      .getRawMany();
+
+    const userLikes = await this.likeRepository
+      .createQueryBuilder('l')
+      .select('l.announcement_id', 'announcementId')
+      .where('l.announcement_id IN (:...ids)', { ids: announcementIds })
+      .andWhere('l.user_id = :userId', { userId })
+      .getRawMany();
+
+    const viewMap = new Map(viewCounts.map((r) => [r.announcementId, r.count]));
+    const likeMap = new Map(likeCounts.map((r) => [r.announcementId, r.count]));
+    const userLikeSet = new Set(userLikes.map((r) => r.announcementId));
+
+    for (const id of announcementIds) {
+      result.set(id, {
+        viewCount: viewMap.get(id) || 0,
+        likeCount: likeMap.get(id) || 0,
+        likedByMe: userLikeSet.has(id),
+      });
+    }
+    return result;
   }
 }

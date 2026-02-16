@@ -37,6 +37,14 @@ export default function AnnouncementsPage() {
 
   // View modal
   const [viewingAnnouncement, setViewingAnnouncement] = useState<AnnouncementResponse | null>(null);
+  const [likingId, setLikingId] = useState<string | null>(null);
+
+  // Registrar visualizacao ao abrir modal
+  useEffect(() => {
+    if (viewingAnnouncement) {
+      announcementsApi.recordView(viewingAnnouncement.id).catch(() => {});
+    }
+  }, [viewingAnnouncement]);
 
   const loadData = useCallback(async () => {
     try {
@@ -93,6 +101,30 @@ export default function AnnouncementsPage() {
       setError(err instanceof Error ? err.message : 'Erro ao salvar comunicado');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleLike = async (id: string) => {
+    setLikingId(id);
+    try {
+      const { liked } = await announcementsApi.toggleLike(id);
+      // Atualizar estado otimista
+      setAnnouncements((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? { ...a, likedByMe: liked, likeCount: liked ? a.likeCount + 1 : a.likeCount - 1 }
+            : a
+        )
+      );
+      setViewingAnnouncement((prev) =>
+        prev && prev.id === id
+          ? { ...prev, likedByMe: liked, likeCount: liked ? prev.likeCount + 1 : prev.likeCount - 1 }
+          : prev
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao curtir comunicado');
+    } finally {
+      setLikingId(null);
     }
   };
 
@@ -204,12 +236,19 @@ export default function AnnouncementsPage() {
       >
         {viewingAnnouncement && (
           <div>
-            <div className="flex items-center gap-3 mb-4 text-sm text-gray-500">
+            <div className="flex items-center flex-wrap gap-3 mb-4 text-sm text-gray-500">
               {getTypeBadge(viewingAnnouncement.type)}
               <span>{formatDate(viewingAnnouncement.createdAt)}</span>
               {viewingAnnouncement.createdByName && (
                 <span>por {viewingAnnouncement.createdByName}</span>
               )}
+              <span className="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                {viewingAnnouncement.viewCount}
+              </span>
             </div>
             <div
               className="prose prose-sm max-w-none"
@@ -218,9 +257,27 @@ export default function AnnouncementsPage() {
           </div>
         )}
         <ModalFooter>
-          <Button variant="secondary" onClick={() => setViewingAnnouncement(null)}>
-            Fechar
-          </Button>
+          <div className="flex items-center justify-between w-full">
+            {viewingAnnouncement && (
+              <button
+                onClick={() => handleToggleLike(viewingAnnouncement.id)}
+                disabled={likingId === viewingAnnouncement.id}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  viewingAnnouncement.likedByMe
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill={viewingAnnouncement.likedByMe ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {viewingAnnouncement.likeCount}
+              </button>
+            )}
+            <Button variant="secondary" onClick={() => setViewingAnnouncement(null)}>
+              Fechar
+            </Button>
+          </div>
         </ModalFooter>
       </Modal>
 
@@ -250,6 +307,9 @@ export default function AnnouncementsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Autor
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Engajamento
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acoes
                 </th>
@@ -274,6 +334,23 @@ export default function AnnouncementsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
                     {announcement.createdByName || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500 text-sm">
+                    <span className="inline-flex items-center gap-3">
+                      <span className="inline-flex items-center gap-1" title="Visualizacoes">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {announcement.viewCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1" title="Curtidas">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill={announcement.likedByMe ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {announcement.likeCount}
+                      </span>
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-4">
                     <button
