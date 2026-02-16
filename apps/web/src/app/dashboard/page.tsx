@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Modal } from '@/components/ui/Modal';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import { useAuthContext } from '@/components/AuthProvider';
 import { unitsApi, residentsApi, assembliesApi, announcementsApi, AnnouncementResponse } from '@/lib/api';
 
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [announcements, setAnnouncements] = useState<AnnouncementResponse[]>([]);
   const [viewingAnnouncement, setViewingAnnouncement] = useState<AnnouncementResponse | null>(null);
+  const [likingId, setLikingId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -51,6 +53,36 @@ export default function DashboardPage() {
 
     loadStats();
   }, []);
+
+  // Registrar visualizacao ao abrir modal
+  useEffect(() => {
+    if (viewingAnnouncement) {
+      announcementsApi.recordView(viewingAnnouncement.id).catch(() => {});
+    }
+  }, [viewingAnnouncement]);
+
+  const handleToggleLike = async (id: string) => {
+    setLikingId(id);
+    try {
+      const { liked } = await announcementsApi.toggleLike(id);
+      setAnnouncements((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? { ...a, likedByMe: liked, likeCount: liked ? a.likeCount + 1 : a.likeCount - 1 }
+            : a
+        )
+      );
+      setViewingAnnouncement((prev) =>
+        prev && prev.id === id
+          ? { ...prev, likedByMe: liked, likeCount: liked ? prev.likeCount + 1 : prev.likeCount - 1 }
+          : prev
+      );
+    } catch {
+      // silently ignore
+    } finally {
+      setLikingId(null);
+    }
+  };
 
   const statCards = isSyndic
     ? [
@@ -197,7 +229,22 @@ export default function DashboardPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">{formatDate(a.createdAt)}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                      <span>{formatDate(a.createdAt)}</span>
+                      <span className="inline-flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {a.viewCount}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill={a.likedByMe ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        {a.likeCount}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -215,7 +262,7 @@ export default function DashboardPage() {
       >
         {viewingAnnouncement && (
           <div>
-            <div className="flex items-center gap-3 mb-4 text-sm text-gray-500">
+            <div className="flex items-center flex-wrap gap-3 mb-4 text-sm text-gray-500">
               {viewingAnnouncement.type === 'ASSEMBLY' ? (
                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                   Assembleia
@@ -229,6 +276,13 @@ export default function DashboardPage() {
               {viewingAnnouncement.createdByName && (
                 <span>por {viewingAnnouncement.createdByName}</span>
               )}
+              <span className="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                {viewingAnnouncement.viewCount}
+              </span>
             </div>
             <div
               className="prose prose-sm max-w-none"
@@ -236,6 +290,29 @@ export default function DashboardPage() {
             />
           </div>
         )}
+        <ModalFooter>
+          <div className="flex items-center justify-between w-full">
+            {viewingAnnouncement && (
+              <button
+                onClick={() => handleToggleLike(viewingAnnouncement.id)}
+                disabled={likingId === viewingAnnouncement.id}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  viewingAnnouncement.likedByMe
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill={viewingAnnouncement.likedByMe ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {viewingAnnouncement.likeCount}
+              </button>
+            )}
+            <Button variant="secondary" onClick={() => setViewingAnnouncement(null)}>
+              Fechar
+            </Button>
+          </div>
+        </ModalFooter>
       </Modal>
     </div>
   );
