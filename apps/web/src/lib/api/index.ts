@@ -94,3 +94,9 @@ export {
   type CreateReservationDto,
   type UpdateReservationStatusDto,
 } from './reservations';
+
+export {
+  subscriptionsApi,
+  type PlanConfig,
+  type TenantSubscription,
+} from './subscriptions';

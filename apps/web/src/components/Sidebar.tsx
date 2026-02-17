@@ -60,6 +60,14 @@ function ClipboardIcon({ className }: { className?: string }) {
   );
 }
 
+function CreditCardIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+    </svg>
+  );
+}
+
 function CalendarDaysIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -94,6 +102,7 @@ export function Sidebar() {
     { name: 'Assembleias', href: '/dashboard/assemblies', icon: CalendarIcon, show: true },
     { name: 'Ocorrencias', href: '/dashboard/issues', icon: ClipboardIcon, show: true },
     { name: 'Reservas', href: '/dashboard/reservations', icon: CalendarDaysIcon, show: true },
+    { name: 'Plano', href: '/dashboard/billing', icon: CreditCardIcon, show: isAdmin },
   ].filter(item => item.show);
 
   const getRoleBadge = () => {

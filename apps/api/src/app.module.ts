@@ -22,6 +22,8 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
 import { SeedModule } from './modules/seed';
 import { getDatabaseConfig } from './core/db/database.config';
 import { EmailModule } from './core/email/email.module';
+import { StripeModule } from './core/stripe/stripe.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { EmailModule } from './core/email/email.module';
 
     // Core
     EmailModule,
+    StripeModule,
 
     // Modulos da aplicacao
     AuthModule,
@@ -55,6 +58,7 @@ import { EmailModule } from './core/email/email.module';
     IssuesModule,
     ReservationsModule,
     HealthModule,
+    SubscriptionsModule,
     SeedModule,
   ],
   providers: [

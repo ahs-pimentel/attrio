@@ -1,5 +1,13 @@
 // Tipos e contratos compartilhados do Attrio
 
+// Subscription
+export {
+  SubscriptionPlan,
+  SubscriptionStatus,
+  type PlanConfig,
+  type TenantSubscription,
+} from './subscription';
+
 // ============================================
 // Enums
 // ============================================

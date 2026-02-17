@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UnitEntity } from './unit.entity';
+import { TenantEntity } from '../tenants/tenant.entity';
 import { CreateUnitDto, UpdateUnitDto } from './dto/unit.dto';
 import { UnitStatus } from '@attrio/contracts';
 
@@ -10,6 +11,8 @@ export class UnitsService {
   constructor(
     @InjectRepository(UnitEntity)
     private readonly unitRepository: Repository<UnitEntity>,
+    @InjectRepository(TenantEntity)
+    private readonly tenantRepository: Repository<TenantEntity>,
   ) {}
 
   async findAllByTenant(tenantId: string): Promise<UnitEntity[]> {
@@ -36,6 +39,17 @@ export class UnitsService {
   }
 
   async create(tenantId: string, dto: CreateUnitDto): Promise<UnitEntity> {
+    // Verificar limite de unidades do plano
+    const tenant = await this.tenantRepository.findOne({ where: { id: tenantId } });
+    if (tenant) {
+      const currentCount = await this.unitRepository.count({ where: { tenantId } });
+      if (currentCount >= tenant.maxUnits) {
+        throw new ForbiddenException(
+          `Limite de ${tenant.maxUnits} unidades atingido. Faca upgrade do seu plano para adicionar mais unidades.`,
+        );
+      }
+    }
+
     // Gerar identifier se nao informado
     const identifier = dto.identifier || `${dto.block}-${dto.number}`;
 
