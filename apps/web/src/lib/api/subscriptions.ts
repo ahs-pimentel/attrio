@@ -1,16 +1,16 @@
 import { apiClient } from './client';
-import type { PlanConfig, TenantSubscription, SubscriptionPlan } from '@attrio/contracts';
+import type { PlanConfig, TenantSubscriptionSummary, SubscriptionPlan } from '@attrio/contracts';
 
-export type { PlanConfig, TenantSubscription };
+export type { PlanConfig, TenantSubscriptionSummary };
 
 export const subscriptionsApi = {
   getPlans: () => apiClient.get<PlanConfig[]>('/subscriptions/plans'),
 
-  getCurrent: () => apiClient.get<TenantSubscription>('/subscriptions/current'),
+  getTenants: () => apiClient.get<TenantSubscriptionSummary[]>('/subscriptions/tenants'),
 
-  createCheckout: (plan: SubscriptionPlan) =>
-    apiClient.post<{ url: string }>('/subscriptions/checkout', { plan }),
+  createCheckout: (tenantId: string, plan: SubscriptionPlan) =>
+    apiClient.post<{ url: string }>('/subscriptions/checkout', { tenantId, plan }),
 
-  createPortal: () =>
-    apiClient.post<{ url: string }>('/subscriptions/portal', {}),
+  createPortal: (tenantId: string) =>
+    apiClient.post<{ url: string }>('/subscriptions/portal', { tenantId }),
 };

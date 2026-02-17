@@ -33,3 +33,15 @@ export interface TenantSubscription {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 }
+
+/** Dados de assinatura de um tenant (visao SAAS_ADMIN) */
+export interface TenantSubscriptionSummary {
+  tenantId: string;
+  tenantName: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  maxUnits: number;
+  currentUnits: number;
+  currentPeriodEnd: string | null;
+  stripeCustomerId: string | null;
+}

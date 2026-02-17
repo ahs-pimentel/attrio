@@ -1,8 +1,12 @@
-import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsString, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SubscriptionPlan, SubscriptionStatus } from '@attrio/contracts';
 
 export class CreateCheckoutDto {
+  @ApiProperty({ description: 'ID do condominio' })
+  @IsUUID()
+  tenantId: string;
+
   @ApiProperty({ enum: SubscriptionPlan, description: 'Plano desejado' })
   @IsEnum(SubscriptionPlan)
   plan: SubscriptionPlan;
@@ -19,6 +23,10 @@ export class CreateCheckoutDto {
 }
 
 export class CreatePortalDto {
+  @ApiProperty({ description: 'ID do condominio' })
+  @IsUUID()
+  tenantId: string;
+
   @ApiPropertyOptional({ description: 'URL de retorno apos sair do portal' })
   @IsOptional()
   @IsString()

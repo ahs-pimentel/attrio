@@ -109,20 +109,26 @@ export class SubscriptionsService {
     return config;
   }
 
-  async getCurrentSubscription(tenantId: string) {
-    const tenant = await this.tenantRepository.findOne({ where: { id: tenantId } });
-    if (!tenant) throw new NotFoundException('Condominio nao encontrado');
+  async getAllTenantsSubscriptions() {
+    const tenants = await this.tenantRepository.find({ order: { createdAt: 'DESC' } });
 
-    const currentUnits = await this.unitRepository.count({ where: { tenantId } });
+    const results = await Promise.all(
+      tenants.map(async (tenant) => {
+        const currentUnits = await this.unitRepository.count({ where: { tenantId: tenant.id } });
+        return {
+          tenantId: tenant.id,
+          tenantName: tenant.name,
+          plan: tenant.plan,
+          status: tenant.subscriptionStatus,
+          maxUnits: tenant.maxUnits,
+          currentUnits,
+          currentPeriodEnd: tenant.currentPeriodEnd?.toISOString() || null,
+          stripeCustomerId: tenant.stripeCustomerId || null,
+        };
+      }),
+    );
 
-    return {
-      plan: tenant.plan,
-      status: tenant.subscriptionStatus,
-      maxUnits: tenant.maxUnits,
-      currentUnits,
-      currentPeriodEnd: tenant.currentPeriodEnd?.toISOString() || null,
-      cancelAtPeriodEnd: false,
-    };
+    return results;
   }
 
   async createCheckout(

@@ -17,18 +17,10 @@ import {
   CreateCheckoutDto,
   CreatePortalDto,
   PlanResponseDto,
-  SubscriptionResponseDto,
   CheckoutResponseDto,
 } from './dto/subscription.dto';
-import { RequireTenant, Roles, CurrentUser, Public } from '../auth';
+import { Roles, Public } from '../auth';
 import { UserRole } from '@attrio/contracts';
-
-interface RequestUser {
-  userId: string;
-  tenantId: string | null;
-  role: UserRole;
-  email?: string;
-}
 
 @ApiTags('Assinaturas')
 @Controller()
@@ -48,30 +40,24 @@ export class SubscriptionsController {
     return this.subscriptionsService.getPlans();
   }
 
-  @Get('subscriptions/current')
+  @Get('subscriptions/tenants')
   @ApiBearerAuth()
-  @RequireTenant()
   @Roles(UserRole.SAAS_ADMIN)
-  @ApiOperation({ summary: 'Obter assinatura atual do condominio' })
-  @ApiResponse({ status: 200, type: SubscriptionResponseDto })
-  async getCurrent(@CurrentUser() user: RequestUser): Promise<SubscriptionResponseDto> {
-    return this.subscriptionsService.getCurrentSubscription(user.tenantId!);
+  @ApiOperation({ summary: 'Listar todos os condominios com dados de assinatura' })
+  async getAllTenantsSubscriptions() {
+    return this.subscriptionsService.getAllTenantsSubscriptions();
   }
 
   @Post('subscriptions/checkout')
   @ApiBearerAuth()
-  @RequireTenant()
   @Roles(UserRole.SAAS_ADMIN)
   @ApiOperation({ summary: 'Criar sessao de checkout do Stripe' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
-  async createCheckout(
-    @Body() dto: CreateCheckoutDto,
-    @CurrentUser() user: RequestUser,
-  ): Promise<CheckoutResponseDto> {
+  async createCheckout(@Body() dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
     return this.subscriptionsService.createCheckout(
-      user.tenantId!,
+      dto.tenantId,
       dto.plan,
-      user.email || '',
+      '',
       dto.successUrl,
       dto.cancelUrl,
     );
@@ -79,15 +65,11 @@ export class SubscriptionsController {
 
   @Post('subscriptions/portal')
   @ApiBearerAuth()
-  @RequireTenant()
   @Roles(UserRole.SAAS_ADMIN)
   @ApiOperation({ summary: 'Criar sessao do Customer Portal do Stripe' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
-  async createPortal(
-    @Body() dto: CreatePortalDto,
-    @CurrentUser() user: RequestUser,
-  ): Promise<CheckoutResponseDto> {
-    return this.subscriptionsService.createPortalSession(user.tenantId!, dto.returnUrl);
+  async createPortal(@Body() dto: CreatePortalDto): Promise<CheckoutResponseDto> {
+    return this.subscriptionsService.createPortalSession(dto.tenantId, dto.returnUrl);
   }
 
   @Post('webhooks/stripe')

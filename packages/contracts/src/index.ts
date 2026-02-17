@@ -6,6 +6,7 @@ export {
   SubscriptionStatus,
   type PlanConfig,
   type TenantSubscription,
+  type TenantSubscriptionSummary,
 } from './subscription';
 
 // ============================================
