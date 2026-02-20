@@ -21,7 +21,7 @@ import {
   AttendanceStatusDto,
   QrCodeDataDto,
 } from './dto/attendance.dto';
-import { RequireTenant, Roles, CurrentUser, Public } from '../auth';
+import { RequireTenant, Roles, CurrentUser, Public } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {

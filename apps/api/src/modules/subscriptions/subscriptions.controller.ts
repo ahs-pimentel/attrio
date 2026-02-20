@@ -19,7 +19,7 @@ import {
   PlanResponseDto,
   CheckoutResponseDto,
 } from './dto/subscription.dto';
-import { Roles, Public } from '../auth';
+import { Roles, Public } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 @ApiTags('Assinaturas')

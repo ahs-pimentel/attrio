@@ -18,7 +18,7 @@ import {
 import { SessionService } from './session.service';
 import { VotesService } from './votes.service';
 import { OtpService } from './otp.service';
-import { Public } from '../auth';
+import { Public } from '../auth/decorators';
 import { VoteChoice, ParticipantApprovalStatus, AgendaItemStatus, AssemblyStatus } from '@attrio/contracts';
 import { IsString, IsUUID, IsEnum, IsOptional } from 'class-validator';
 

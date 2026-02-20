@@ -28,7 +28,7 @@ import {
   CreateVehicleDto,
   CreatePetDto,
 } from './dto';
-import { CurrentUser, Roles, RequireTenant } from '../auth';
+import { CurrentUser, Roles, RequireTenant } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {

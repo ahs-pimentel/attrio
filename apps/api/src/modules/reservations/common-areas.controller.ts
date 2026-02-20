@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CommonAreasService } from './common-areas.service';
 import { CreateCommonAreaDto, UpdateCommonAreaDto, CommonAreaResponseDto } from './dto';
-import { RequireTenant, Roles, CurrentUser } from '../auth';
+import { RequireTenant, Roles, CurrentUser } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {

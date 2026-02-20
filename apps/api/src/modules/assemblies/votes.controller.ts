@@ -15,7 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { VotesService } from './votes.service';
 import { CastVoteDto, VoteResponseDto, VoteSummaryDto } from './dto';
-import { RequireTenant } from '../auth';
+import { RequireTenant } from '../auth/decorators';
 
 @ApiTags('Votos de Assembleia')
 @ApiBearerAuth()

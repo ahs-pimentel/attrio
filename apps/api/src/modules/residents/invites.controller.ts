@@ -27,7 +27,7 @@ import {
   CompleteResidentRegistrationDto,
   ResidentResponseDto,
 } from './dto';
-import { CurrentUser, Roles, RequireTenant, Public } from '../auth';
+import { CurrentUser, Roles, RequireTenant, Public } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {

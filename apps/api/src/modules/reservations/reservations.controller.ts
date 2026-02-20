@@ -15,7 +15,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto, UpdateReservationStatusDto, ReservationResponseDto } from './dto';
-import { RequireTenant, Roles, CurrentUser } from '../auth';
+import { RequireTenant, Roles, CurrentUser } from '../auth/decorators';
 import { UserRole, ReservationStatus } from '@attrio/contracts';
 
 interface RequestUser {

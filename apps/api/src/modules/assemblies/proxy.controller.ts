@@ -30,7 +30,7 @@ import {
   PendingProxyDto,
   ProxyApprovalResultDto,
 } from './dto/proxy.dto';
-import { RequireTenant, Roles, CurrentUser, Public } from '../auth';
+import { RequireTenant, Roles, CurrentUser, Public } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 import * as fs from 'fs';
 

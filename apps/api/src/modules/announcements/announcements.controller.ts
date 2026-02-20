@@ -17,7 +17,7 @@ import {
   UpdateAnnouncementDto,
   AnnouncementResponseDto,
 } from './dto/announcement.dto';
-import { RequireTenant, Roles, CurrentUser } from '../auth';
+import { RequireTenant, Roles, CurrentUser } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {

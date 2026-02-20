@@ -22,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { CreateTenantDto, UpdateTenantDto, TenantResponseDto } from './dto/tenant.dto';
-import { Roles } from '../auth';
+import { Roles } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 @ApiTags('Tenants')

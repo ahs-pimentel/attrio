@@ -20,7 +20,7 @@ import {
   MinutesResponseDto,
   GenerateMinutesResponseDto,
 } from './dto/minutes.dto';
-import { RequireTenant, Roles, CurrentUser } from '../auth';
+import { RequireTenant, Roles, CurrentUser } from '../auth/decorators';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {
