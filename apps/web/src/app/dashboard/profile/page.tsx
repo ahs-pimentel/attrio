@@ -323,7 +323,7 @@ export default function ProfilePage() {
                   <p className="font-medium text-gray-900">{item.name as string}</p>
                   <p className="text-sm text-gray-500">
                     {item.phone as string}
-                    {item.isWhatsApp && <span className="ml-2 text-green-600 text-xs font-medium">WhatsApp</span>}
+                    {!!item.isWhatsApp && <span className="ml-2 text-green-600 text-xs font-medium">WhatsApp</span>}
                   </p>
                 </div>
               )
@@ -335,7 +335,7 @@ export default function ProfilePage() {
                   <p className="font-medium text-gray-900">{item.name as string}</p>
                   <p className="text-sm text-gray-500">
                     {relationshipLabels[item.relationship as string] || item.relationship as string}
-                    {item.email && ` - ${item.email}`}
+                    {!!item.email && ` - ${item.email as string}`}
                   </p>
                 </div>
               )
@@ -345,7 +345,7 @@ export default function ProfilePage() {
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.name as string}</p>
-                  {item.document && <p className="text-sm text-gray-500">{item.document as string}</p>}
+                  {!!item.document && <p className="text-sm text-gray-500">{item.document as string}</p>}
                 </div>
               )
             )}
@@ -365,8 +365,8 @@ export default function ProfilePage() {
                   <p className="font-medium text-gray-900">{item.name as string}</p>
                   <p className="text-sm text-gray-500">
                     {petTypeLabels[item.type as string] || item.type as string}
-                    {item.breed && ` - ${item.breed}`}
-                    {item.color && ` (${item.color})`}
+                    {!!item.breed && ` - ${item.breed as string}`}
+                    {!!item.color && ` (${item.color as string})`}
                   </p>
                 </div>
               )
