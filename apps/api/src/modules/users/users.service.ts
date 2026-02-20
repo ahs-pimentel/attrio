@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { UserTenantEntity } from './user-tenant.entity';
 import { UserRole } from '@attrio/contracts';
@@ -18,6 +18,7 @@ export class UsersService {
     @InjectRepository(UserTenantEntity)
     private readonly userTenantRepository: Repository<UserTenantEntity>,
     private readonly tenantsService: TenantsService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findBySupabaseId(supabaseUserId: string): Promise<UserEntity | null> {
@@ -155,15 +156,20 @@ export class UsersService {
       throw new NotFoundException('Usuario nao encontrado');
     }
 
+    const finalRole = dto.role ?? user.role;
+
     // Prevent self-demotion
-    if (user.id === currentUserId && dto.role && dto.role !== UserRole.SAAS_ADMIN) {
+    if (user.id === currentUserId && dto.role && dto.role !== user.role) {
       throw new ForbiddenException('Voce nao pode alterar seu proprio role');
     }
 
-    // SAAS_ADMIN cannot have tenant
-    const finalRole = dto.role || user.role;
-    if (finalRole === UserRole.SAAS_ADMIN && dto.tenantId) {
-      throw new ConflictException('SAAS_ADMIN nao pode ter tenant associado');
+    // SAAS_ADMIN cannot have tenant - check both tenantId and tenantIds
+    if (finalRole === UserRole.SAAS_ADMIN) {
+      const hasTenantId = dto.tenantId != null;
+      const hasTenantIds = dto.tenantIds && dto.tenantIds.length > 0;
+      if (hasTenantId || hasTenantIds) {
+        throw new ConflictException('SAAS_ADMIN nao pode ter tenant associado');
+      }
     }
 
     // Email uniqueness
@@ -174,64 +180,77 @@ export class UsersService {
       }
     }
 
-    // Auto-clear tenant when promoting to SAAS_ADMIN
-    if (dto.role === UserRole.SAAS_ADMIN) {
-      user.tenantId = null;
-      // Limpar junction table
-      await this.userTenantRepository.delete({ userId: id });
-    }
-
-    // Apply updates
-    if (dto.name !== undefined) user.name = dto.name;
-    if (dto.email !== undefined) user.email = dto.email;
-    if (dto.role !== undefined) user.role = dto.role;
-
-    // Processar tenantIds (atribuicao a multiplos condominios)
-    if (dto.tenantIds !== undefined) {
-      // Validar que todos os tenantIds existem
-      for (const tenantId of dto.tenantIds) {
+    // Validate tenantIds exist before making any changes
+    const tenantIdsToProcess = dto.tenantIds;
+    if (tenantIdsToProcess && tenantIdsToProcess.length > 0) {
+      for (const tenantId of tenantIdsToProcess) {
         try {
           await this.tenantsService.findById(tenantId);
-        } catch (error) {
+        } catch {
           throw new NotFoundException(`Condominio com ID ${tenantId} nao encontrado`);
         }
       }
+    }
 
-      // Remover entradas existentes
-      await this.userTenantRepository.delete({ userId: id });
-
-      if (dto.tenantIds.length > 0) {
-        // Inserir novas entradas
-        const entries = dto.tenantIds.map(tenantId =>
-          this.userTenantRepository.create({ userId: id, tenantId }),
-        );
-        await this.userTenantRepository.save(entries);
-
-        // Se tenantId atual nao esta na nova lista, setar o primeiro
-        if (!dto.tenantIds.includes(user.tenantId || '')) {
-          user.tenantId = dto.tenantIds[0];
-        }
-      } else {
-        user.tenantId = null;
-      }
-    } else if (dto.tenantId !== undefined) {
-      // Validar que o tenantId existe
-      if (dto.tenantId) {
-        try {
-          await this.tenantsService.findById(dto.tenantId);
-        } catch (error) {
-          throw new NotFoundException(`Condominio com ID ${dto.tenantId} nao encontrado`);
-        }
-      }
-
-      user.tenantId = dto.tenantId;
-      // Garantir entrada na junction table
-      if (dto.tenantId) {
-        await this.addUserTenant(id, dto.tenantId);
+    // Validate single tenantId if provided
+    if (dto.tenantId) {
+      try {
+        await this.tenantsService.findById(dto.tenantId);
+      } catch {
+        throw new NotFoundException(`Condominio com ID ${dto.tenantId} nao encontrado`);
       }
     }
 
-    return this.userRepository.save(user);
+    // Use a transaction for atomicity
+    return this.dataSource.transaction(async (manager) => {
+      const userRepo = manager.getRepository(UserEntity);
+      const userTenantRepo = manager.getRepository(UserTenantEntity);
+
+      // Apply basic field updates
+      if (dto.name !== undefined) user.name = dto.name;
+      if (dto.email !== undefined) user.email = dto.email;
+      if (dto.role !== undefined) user.role = dto.role;
+
+      // Handle tenant assignments based on the final role
+      if (finalRole === UserRole.SAAS_ADMIN) {
+        // SAAS_ADMIN: clear all tenant associations
+        user.tenantId = null;
+        await userTenantRepo.delete({ userId: id });
+      } else if (tenantIdsToProcess !== undefined) {
+        // Process tenantIds array (multi-tenant assignment)
+        await userTenantRepo.delete({ userId: id });
+
+        if (tenantIdsToProcess.length > 0) {
+          for (const tenantId of tenantIdsToProcess) {
+            await userTenantRepo.insert({ userId: id, tenantId });
+          }
+
+          // Set primary tenantId: keep current if in list, otherwise use first
+          if (!tenantIdsToProcess.includes(user.tenantId || '')) {
+            user.tenantId = tenantIdsToProcess[0];
+          }
+        } else {
+          user.tenantId = null;
+        }
+      } else if (dto.tenantId !== undefined) {
+        // Process single tenantId (legacy path)
+        user.tenantId = dto.tenantId;
+        if (dto.tenantId) {
+          const existing = await userTenantRepo.findOne({
+            where: { userId: id, tenantId: dto.tenantId },
+          });
+          if (!existing) {
+            await userTenantRepo.insert({ userId: id, tenantId: dto.tenantId });
+          }
+        }
+      }
+
+      // Clear loaded relations to prevent TypeORM from cascading stale data
+      delete (user as any).userTenants;
+      delete (user as any).tenant;
+
+      return userRepo.save(user);
+    });
   }
 
   // === Metodos multi-tenant ===
@@ -283,6 +302,25 @@ export class UsersService {
 
   async removeUserTenant(userId: string, tenantId: string): Promise<void> {
     await this.userTenantRepository.delete({ userId, tenantId });
+  }
+
+  async updateOwnProfile(userId: string, data: { name?: string; email?: string }): Promise<UserEntity> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Usuario nao encontrado');
+    }
+
+    if (data.email && data.email !== user.email) {
+      const existing = await this.findByEmail(data.email);
+      if (existing) {
+        throw new ConflictException('Email ja esta em uso');
+      }
+    }
+
+    if (data.name !== undefined) user.name = data.name;
+    if (data.email !== undefined) user.email = data.email;
+
+    return this.userRepository.save(user);
   }
 
   async resetPassword(id: string, newPassword: string): Promise<void> {

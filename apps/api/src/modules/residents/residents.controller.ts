@@ -9,6 +9,8 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  NotFoundException,
+  SetMetadata,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +24,7 @@ import { ResidentsService } from './residents.service';
 import {
   UpdateResidentDto,
   ResidentResponseDto,
+  CreateResidentSelfDto,
   CreateEmergencyContactDto,
   CreateHouseholdMemberDto,
   CreateUnitEmployeeDto,
@@ -29,9 +32,11 @@ import {
   CreatePetDto,
 } from './dto';
 import { CurrentUser, Roles, RequireTenant } from '../auth/decorators';
+import { REQUIRE_TENANT_KEY } from '../auth/guards/tenant.guard';
 import { UserRole } from '@attrio/contracts';
 
 interface RequestUser {
+  userId: string;
   tenantId: string;
   role: UserRole;
 }
@@ -49,6 +54,42 @@ export class ResidentsController {
   @ApiOkResponse({ type: [ResidentResponseDto] })
   async findAll(@CurrentUser() user: RequestUser): Promise<ResidentResponseDto[]> {
     return this.residentsService.findAllByTenant(user.tenantId);
+  }
+
+  @Get('me')
+  @SetMetadata(REQUIRE_TENANT_KEY, false)
+  @Roles(UserRole.RESIDENT, UserRole.SYNDIC, UserRole.DOORMAN, UserRole.SAAS_ADMIN)
+  @ApiOperation({ summary: 'Buscar dados do morador logado' })
+  @ApiOkResponse({ type: ResidentResponseDto })
+  @ApiNotFoundResponse({ description: 'Morador nao encontrado para este usuario' })
+  async findMe(@CurrentUser() user: RequestUser): Promise<ResidentResponseDto> {
+    const resident = await this.residentsService.findByUserId(user.userId);
+    if (!resident) {
+      throw new NotFoundException('Nenhum cadastro de morador encontrado para este usuario');
+    }
+    return resident;
+  }
+
+  @Post('me')
+  @SetMetadata(REQUIRE_TENANT_KEY, false)
+  @Roles(UserRole.RESIDENT, UserRole.SYNDIC, UserRole.DOORMAN, UserRole.SAAS_ADMIN)
+  @ApiOperation({ summary: 'Auto-cadastro de morador' })
+  @ApiOkResponse({ type: ResidentResponseDto })
+  async createMe(
+    @Body() dto: CreateResidentSelfDto,
+    @CurrentUser() user: RequestUser,
+  ): Promise<ResidentResponseDto> {
+    return this.residentsService.createForUser({
+      userId: user.userId,
+      tenantId: user.tenantId,
+      unitId: dto.unitId,
+      type: dto.type,
+      fullName: dto.fullName,
+      email: dto.email,
+      phone: dto.phone,
+      cpf: dto.cpf,
+      rg: dto.rg,
+    });
   }
 
   @Get(':id')

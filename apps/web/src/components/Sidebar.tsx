@@ -194,7 +194,10 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="p-4 border-t border-white/10">
-        <div className="flex items-center">
+        <Link
+          href="/dashboard/profile"
+          className="flex items-center mb-3 px-2 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-all"
+        >
           <div className="flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-attrio-green flex items-center justify-center">
               <span className="text-white text-sm font-medium">
@@ -206,21 +209,25 @@ export function Sidebar() {
             <p className="text-sm font-medium text-white truncate">
               {user?.email || 'Usuario'}
             </p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-0.5">
               {getRoleBadge() && (
                 <span className="text-xs px-2 py-0.5 bg-attrio-green rounded text-white font-medium">
                   {getRoleBadge()}
                 </span>
               )}
-              <button
-                onClick={signOut}
-                className="text-xs text-white/70 hover:text-white transition-colors"
-              >
-                Sair
-              </button>
+              <span className="text-xs text-white/60">Editar perfil</span>
             </div>
           </div>
-        </div>
+        </Link>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center px-2 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+        >
+          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+          </svg>
+          Sair
+        </button>
       </div>
     </div>
   );

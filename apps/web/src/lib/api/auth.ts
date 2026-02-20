@@ -19,11 +19,31 @@ export interface ProfileResponse {
   availableTenants?: TenantInfo[];
 }
 
+export interface UpdateProfileDto {
+  name?: string;
+  email?: string;
+}
+
+export interface UpdateProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export const authApi = {
   /**
    * Obtem o perfil do usuario autenticado
    */
   getProfile: () => request<ProfileResponse>('/auth/profile'),
+
+  /**
+   * Atualiza o perfil do usuario autenticado
+   */
+  updateProfile: (data: UpdateProfileDto) =>
+    request<UpdateProfileResponse>('/auth/profile', {
+      method: 'PUT',
+      body: data,
+    }),
 
   /**
    * Lista condominios do usuario autenticado

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -10,7 +10,7 @@ import {
   PetEntity,
 } from './entities';
 import { UpdateResidentDto } from './dto';
-import { ResidentStatus, RelationshipType, PetType } from '@attrio/contracts';
+import { ResidentStatus, ResidentType, RelationshipType, PetType } from '@attrio/contracts';
 
 @Injectable()
 export class ResidentsService {
@@ -59,8 +59,34 @@ export class ResidentsService {
   async findByUserId(userId: string): Promise<ResidentEntity | null> {
     return this.residentRepository.findOne({
       where: { userId },
-      relations: ['unit', 'tenant'],
+      relations: ['unit', 'tenant', 'emergencyContacts', 'householdMembers', 'employees', 'vehicles', 'pets'],
     });
+  }
+
+  async createForUser(data: {
+    userId: string;
+    tenantId: string;
+    unitId: string;
+    type: ResidentType;
+    fullName: string;
+    email?: string;
+    phone?: string;
+    cpf?: string;
+    rg?: string;
+  }): Promise<ResidentEntity> {
+    const existing = await this.findByUserId(data.userId);
+    if (existing) {
+      throw new ConflictException('Usuario ja possui um cadastro de morador');
+    }
+
+    const resident = this.residentRepository.create({
+      ...data,
+      status: ResidentStatus.ACTIVE,
+      dataConsent: true,
+      dataConsentAt: new Date(),
+    });
+    const saved = await this.residentRepository.save(resident);
+    return this.findByUserId(data.userId) as Promise<ResidentEntity>;
   }
 
   async update(id: string, tenantId: string, dto: UpdateResidentDto): Promise<ResidentEntity> {

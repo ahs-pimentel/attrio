@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsUUID, IsArray, MaxLength, ValidateIf } from 'class-validator';
 import { UserRole } from '@attrio/contracts';
 
 export class UpdateUserDto {
@@ -21,6 +21,7 @@ export class UpdateUserDto {
   role?: UserRole;
 
   @ApiPropertyOptional({ type: String, nullable: true })
+  @ValidateIf((o, v) => v !== null && v !== undefined)
   @IsUUID()
   @IsOptional()
   tenantId?: string | null;

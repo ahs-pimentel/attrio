@@ -15,6 +15,46 @@ import {
 import { Type } from 'class-transformer';
 import { ResidentStatus, ResidentType, PetType, RelationshipType } from '@attrio/contracts';
 
+// DTO para auto-cadastro de morador (via perfil)
+export class CreateResidentSelfDto {
+  @ApiProperty({ description: 'ID da unidade' })
+  @IsUUID()
+  unitId: string;
+
+  @ApiProperty({ enum: ResidentType })
+  @IsEnum(ResidentType)
+  type: ResidentType;
+
+  @ApiProperty({ example: 'Joao da Silva' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  fullName: string;
+
+  @ApiPropertyOptional()
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(14)
+  cpf?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  rg?: string;
+}
+
 // Sub-DTOs para criação
 export class CreateEmergencyContactDto {
   @ApiProperty({ example: 'Maria Silva' })

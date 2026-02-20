@@ -27,11 +27,13 @@ function mapUserToResponse(user: UserEntity): UserResponseDto {
       name: user.tenant.name,
       slug: user.tenant.slug,
     } : null,
-    tenants: (user.userTenants || []).map(ut => ({
-      id: ut.tenant.id,
-      name: ut.tenant.name,
-      slug: ut.tenant.slug,
-    })),
+    tenants: (user.userTenants || [])
+      .filter(ut => ut.tenant != null)
+      .map(ut => ({
+        id: ut.tenant.id,
+        name: ut.tenant.name,
+        slug: ut.tenant.slug,
+      })),
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

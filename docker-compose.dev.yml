@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: attrio-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: attrio
+      POSTGRES_PASSWORD: attrio123
+      POSTGRES_DB: attrio_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - attrio_dev_postgres:/var/lib/postgresql/data
+      - ./infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U attrio -d attrio_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: attrio-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - attrio_dev_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    name: attrio-dev-network
+
+volumes:
+  attrio_dev_postgres:
+  attrio_dev_redis:

@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsUUID, IsString, IsEmail, IsOptional, MaxLength } from 'class-validator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { UserRole } from '@attrio/contracts';
 import { UsersService } from '../users/users.service';
@@ -56,6 +56,31 @@ class SwitchTenantDto {
   @ApiProperty()
   @IsUUID()
   tenantId: string;
+}
+
+class UpdateProfileDto {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsEmail()
+  @IsOptional()
+  @MaxLength(255)
+  email?: string;
+}
+
+class UpdateProfileResponse {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  email: string;
 }
 
 @ApiTags('Auth')
@@ -114,5 +139,21 @@ export class AuthController {
   ): Promise<{ tenantId: string }> {
     const updated = await this.usersService.switchTenant(user.userId!, body.tenantId);
     return { tenantId: updated.tenantId! };
+  }
+
+  @Put('profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar perfil do usuario autenticado' })
+  @ApiOkResponse({ type: UpdateProfileResponse })
+  async updateProfile(
+    @CurrentUser() user: EnrichedUser,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<UpdateProfileResponse> {
+    const updated = await this.usersService.updateOwnProfile(user.userId!, dto);
+    return {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+    };
   }
 }

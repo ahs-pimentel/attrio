@@ -66,6 +66,16 @@ export interface Pet {
   color?: string | null;
 }
 
+export interface CreateResidentSelfDto {
+  unitId: string;
+  type: ResidentType;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  cpf?: string;
+  rg?: string;
+}
+
 export interface UpdateResidentDto {
   type?: ResidentType;
   fullName?: string;
@@ -178,6 +188,9 @@ export const residentsApi = {
    */
   getMe: () => apiClient.get<ResidentResponse>('/residents/me'),
 
+  createMe: (data: CreateResidentSelfDto) =>
+    apiClient.post<ResidentResponse>('/residents/me', data),
+
   /**
    * Atualiza morador
    */
@@ -198,6 +211,37 @@ export const residentsApi = {
    * Remove morador
    */
   delete: (id: string) => apiClient.delete<void>(`/residents/${id}`),
+
+  // Sub-entidades
+  addContact: (residentId: string, data: Omit<EmergencyContact, 'id'>) =>
+    apiClient.post<EmergencyContact>(`/residents/${residentId}/contacts`, data),
+
+  removeContact: (residentId: string, contactId: string) =>
+    apiClient.delete<void>(`/residents/${residentId}/contacts/${contactId}`),
+
+  addMember: (residentId: string, data: Omit<HouseholdMember, 'id'>) =>
+    apiClient.post<HouseholdMember>(`/residents/${residentId}/members`, data),
+
+  removeMember: (residentId: string, memberId: string) =>
+    apiClient.delete<void>(`/residents/${residentId}/members/${memberId}`),
+
+  addEmployee: (residentId: string, data: Omit<UnitEmployee, 'id'>) =>
+    apiClient.post<UnitEmployee>(`/residents/${residentId}/employees`, data),
+
+  removeEmployee: (residentId: string, employeeId: string) =>
+    apiClient.delete<void>(`/residents/${residentId}/employees/${employeeId}`),
+
+  addVehicle: (residentId: string, data: Omit<Vehicle, 'id'>) =>
+    apiClient.post<Vehicle>(`/residents/${residentId}/vehicles`, data),
+
+  removeVehicle: (residentId: string, vehicleId: string) =>
+    apiClient.delete<void>(`/residents/${residentId}/vehicles/${vehicleId}`),
+
+  addPet: (residentId: string, data: Omit<Pet, 'id'>) =>
+    apiClient.post<Pet>(`/residents/${residentId}/pets`, data),
+
+  removePet: (residentId: string, petId: string) =>
+    apiClient.delete<void>(`/residents/${residentId}/pets/${petId}`),
 };
 
 export const invitesApi = {

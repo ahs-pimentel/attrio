@@ -79,13 +79,22 @@ export default function UsersPage() {
     e.preventDefault();
     if (!editingUser) return;
 
+    // Validate: non-admin roles should have at least one condominium
+    if (formData.role !== UserRole.SAAS_ADMIN && formData.tenantIds.length === 0) {
+      setError('Selecione pelo menos um condominio para este usuario');
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // For SAAS_ADMIN, always send empty tenantIds
+      const tenantIds = formData.role === UserRole.SAAS_ADMIN ? [] : formData.tenantIds;
+
       await usersApi.update(editingUser.id, {
         name: formData.name,
         email: formData.email,
         role: formData.role,
-        tenantIds: formData.tenantIds,
+        tenantIds,
       });
       setEditModalOpen(false);
       setEditingUser(null);
