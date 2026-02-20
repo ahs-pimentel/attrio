@@ -6,6 +6,7 @@ import { UserTenantEntity } from './user-tenant.entity';
 import { UserRole } from '@attrio/contracts';
 import { UpdateUserDto } from './dto/user.dto';
 import { supabaseAdmin } from '../../core/supabase/supabase-admin';
+import { TenantsService } from '../tenants/tenants.service';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,7 @@ export class UsersService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(UserTenantEntity)
     private readonly userTenantRepository: Repository<UserTenantEntity>,
+    private readonly tenantsService: TenantsService,
   ) {}
 
   async findBySupabaseId(supabaseUserId: string): Promise<UserEntity | null> {
@@ -55,7 +57,17 @@ export class UsersService {
       // Atualizar usuario existente
       if (data.email) user.email = data.email;
       if (data.name) user.name = data.name;
-      if (data.tenantId !== undefined) user.tenantId = data.tenantId;
+      if (data.tenantId !== undefined) {
+        // Validar que o tenant existe
+        if (data.tenantId) {
+          try {
+            await this.tenantsService.findById(data.tenantId);
+          } catch (error) {
+            throw new NotFoundException(`Condominio com ID ${data.tenantId} nao encontrado`);
+          }
+        }
+        user.tenantId = data.tenantId;
+      }
       if (data.role) user.role = data.role;
       user = await this.userRepository.save(user);
 
@@ -68,6 +80,15 @@ export class UsersService {
     }
 
     // Criar novo usuario
+    // Validar que o tenant existe se fornecido
+    if (data.tenantId) {
+      try {
+        await this.tenantsService.findById(data.tenantId);
+      } catch (error) {
+        throw new NotFoundException(`Condominio com ID ${data.tenantId} nao encontrado`);
+      }
+    }
+
     user = this.userRepository.create({
       supabaseUserId: data.supabaseUserId,
       email: data.email,
@@ -97,6 +118,13 @@ export class UsersService {
   async assignToTenant(id: string, tenantId: string): Promise<UserEntity | null> {
     const user = await this.findById(id);
     if (!user) return null;
+
+    // Validar que o tenant existe
+    try {
+      await this.tenantsService.findById(tenantId);
+    } catch (error) {
+      throw new NotFoundException(`Condominio com ID ${tenantId} nao encontrado`);
+    }
 
     user.tenantId = tenantId;
     await this.userRepository.save(user);
@@ -160,6 +188,15 @@ export class UsersService {
 
     // Processar tenantIds (atribuicao a multiplos condominios)
     if (dto.tenantIds !== undefined) {
+      // Validar que todos os tenantIds existem
+      for (const tenantId of dto.tenantIds) {
+        try {
+          await this.tenantsService.findById(tenantId);
+        } catch (error) {
+          throw new NotFoundException(`Condominio com ID ${tenantId} nao encontrado`);
+        }
+      }
+
       // Remover entradas existentes
       await this.userTenantRepository.delete({ userId: id });
 
@@ -178,6 +215,15 @@ export class UsersService {
         user.tenantId = null;
       }
     } else if (dto.tenantId !== undefined) {
+      // Validar que o tenantId existe
+      if (dto.tenantId) {
+        try {
+          await this.tenantsService.findById(dto.tenantId);
+        } catch (error) {
+          throw new NotFoundException(`Condominio com ID ${dto.tenantId} nao encontrado`);
+        }
+      }
+
       user.tenantId = dto.tenantId;
       // Garantir entrada na junction table
       if (dto.tenantId) {
@@ -199,6 +245,13 @@ export class UsersService {
   }
 
   async switchTenant(userId: string, tenantId: string): Promise<UserEntity> {
+    // Validar que o tenant existe
+    try {
+      await this.tenantsService.findById(tenantId);
+    } catch (error) {
+      throw new NotFoundException(`Condominio com ID ${tenantId} nao encontrado`);
+    }
+
     const userTenant = await this.userTenantRepository.findOne({
       where: { userId, tenantId },
     });
