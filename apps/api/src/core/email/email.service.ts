@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly resend: Resend | null = null;
+  private resend: Resend | null;
   private readonly fromEmail = 'Attrio <noreply@attrio.online>';
   private readonly frontendUrl: string;
 
@@ -13,6 +13,7 @@ export class EmailService {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     if (!apiKey) {
       this.logger.warn('RESEND_API_KEY nao configurada - emails serao apenas logados');
+      this.resend = null;
     } else {
       this.resend = new Resend(apiKey);
     }
