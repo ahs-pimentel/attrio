@@ -317,7 +317,7 @@ export default function ProfilePage() {
           <Card><CardContent><div className="py-8 text-center text-gray-500">Carregando dados do morador...</div></CardContent></Card>
         ) : resident ? (
           <>
-            {renderSection('Contatos de Emergencia', resident.emergencyContacts, 'contact', 'contact', 'Nenhum contato de emergencia cadastrado',
+            {renderSection('Contatos de Emergencia', resident.emergencyContacts as { id: string; [key: string]: unknown }[] | undefined, 'contact', 'contact', 'Nenhum contato de emergencia cadastrado',
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.name as string}</p>
@@ -329,7 +329,7 @@ export default function ProfilePage() {
               )
             )}
 
-            {renderSection('Membros do Domicilio', resident.householdMembers, 'member', 'member', 'Nenhum membro cadastrado',
+            {renderSection('Membros do Domicilio', resident.householdMembers as { id: string; [key: string]: unknown }[] | undefined, 'member', 'member', 'Nenhum membro cadastrado',
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.name as string}</p>
@@ -341,7 +341,7 @@ export default function ProfilePage() {
               )
             )}
 
-            {renderSection('Funcionarios da Unidade', resident.employees, 'employee', 'employee', 'Nenhum funcionario cadastrado',
+            {renderSection('Funcionarios da Unidade', resident.employees as { id: string; [key: string]: unknown }[] | undefined, 'employee', 'employee', 'Nenhum funcionario cadastrado',
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.name as string}</p>
@@ -350,7 +350,7 @@ export default function ProfilePage() {
               )
             )}
 
-            {renderSection('Veiculos', resident.vehicles, 'vehicle', 'vehicle', 'Nenhum veiculo cadastrado',
+            {renderSection('Veiculos', resident.vehicles as { id: string; [key: string]: unknown }[] | undefined, 'vehicle', 'vehicle', 'Nenhum veiculo cadastrado',
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.brand as string} {item.model as string}</p>
@@ -359,7 +359,7 @@ export default function ProfilePage() {
               )
             )}
 
-            {renderSection('Pets', resident.pets, 'pet', 'pet', 'Nenhum pet cadastrado',
+            {renderSection('Pets', resident.pets as { id: string; [key: string]: unknown }[] | undefined, 'pet', 'pet', 'Nenhum pet cadastrado',
               (item) => (
                 <div>
                   <p className="font-medium text-gray-900">{item.name as string}</p>
