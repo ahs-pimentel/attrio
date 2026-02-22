@@ -49,21 +49,24 @@ export default function UsersPage() {
 
   const handleEdit = (user: UserResponse) => {
     setEditingUser(user);
+    setError(null);
     setFormData({
       name: user.name,
       email: user.email,
       role: user.role,
-      tenantIds: user.tenants?.map(t => t.id) || (user.tenantId ? [user.tenantId] : []),
+      tenantIds: user.tenants?.length > 0
+        ? user.tenants.map(t => t.id)
+        : (user.tenantId ? [user.tenantId] : []),
     });
     setEditModalOpen(true);
   };
 
   const handleRoleChange = (role: UserRole) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       role,
-      tenantIds: role === UserRole.SAAS_ADMIN ? [] : formData.tenantIds,
-    });
+      tenantIds: role === UserRole.SAAS_ADMIN ? [] : prev.tenantIds,
+    }));
   };
 
   const toggleTenant = (tenantId: string) => {
@@ -171,7 +174,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {error && (
+      {error && !editModalOpen && !resetModalOpen && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
           <p className="text-red-800">{error}</p>
           <button
@@ -345,6 +348,13 @@ export default function UsersPage() {
               </button>
             </div>
 
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex justify-between items-center">
+                <p className="text-red-800 text-sm">{error}</p>
+                <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800 ml-2">✕</button>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
@@ -411,16 +421,19 @@ export default function UsersPage() {
                       ))
                     )}
                   </div>
-                  {formData.role === UserRole.SAAS_ADMIN && (
+                  {formData.role === UserRole.SAAS_ADMIN ? (
                     <p className="mt-1 text-xs text-gray-500">
                       Admin Sistema nao pode ter condominio associado
                     </p>
-                  )}
-                  {formData.tenantIds.length > 1 && (
+                  ) : formData.tenantIds.length === 0 ? (
+                    <p className="mt-1 text-xs text-amber-600 font-medium">
+                      Selecione ao menos um condominio para este usuario
+                    </p>
+                  ) : formData.tenantIds.length > 1 ? (
                     <p className="mt-1 text-xs text-gray-500">
                       {formData.tenantIds.length} condominios selecionados
                     </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

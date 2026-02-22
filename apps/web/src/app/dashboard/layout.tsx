@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/AuthProvider';
 import { Sidebar } from '@/components/Sidebar';
+import { DashboardHeader } from '@/components/DashboardHeader';
 import { TenantSelectorModal } from '@/components/TenantSelectorModal';
 
 export default function DashboardLayout({
@@ -36,9 +37,12 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-attrio-gray-50">
       <Sidebar />
       <TenantSelectorModal />
-      <main className="ml-64 p-8">
-        {children}
-      </main>
+      <div className="ml-64 flex flex-col min-h-screen">
+        <DashboardHeader />
+        <main className="flex-1 p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

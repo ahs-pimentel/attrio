@@ -158,17 +158,28 @@ export class UsersService {
 
     const finalRole = dto.role ?? user.role;
 
-    // Prevent self-demotion
+    // Prevent self role change
     if (user.id === currentUserId && dto.role && dto.role !== user.role) {
-      throw new ForbiddenException('Voce nao pode alterar seu proprio role');
+      throw new ForbiddenException('Nao e possivel alterar o proprio role');
     }
 
-    // SAAS_ADMIN cannot have tenant - check both tenantId and tenantIds
+    // SAAS_ADMIN cannot have tenant
     if (finalRole === UserRole.SAAS_ADMIN) {
       const hasTenantId = dto.tenantId != null;
       const hasTenantIds = dto.tenantIds && dto.tenantIds.length > 0;
       if (hasTenantId || hasTenantIds) {
-        throw new ConflictException('SAAS_ADMIN nao pode ter tenant associado');
+        throw new ConflictException('SAAS_ADMIN nao pode ter condominio associado');
+      }
+    }
+
+    // Non-SAAS_ADMIN must have at least one tenant
+    if (finalRole !== UserRole.SAAS_ADMIN) {
+      const willHaveTenants =
+        (dto.tenantIds !== undefined && dto.tenantIds.length > 0) ||
+        (dto.tenantId != null) ||
+        (dto.tenantIds === undefined && dto.tenantId === undefined && (user.tenantId != null || (user.userTenants?.length ?? 0) > 0));
+      if (!willHaveTenants) {
+        throw new BadRequestException('Usuario com esta permissao precisa estar vinculado a um condominio');
       }
     }
 
@@ -217,7 +228,7 @@ export class UsersService {
         user.tenantId = null;
         await userTenantRepo.delete({ userId: id });
       } else if (tenantIdsToProcess !== undefined) {
-        // Process tenantIds array (multi-tenant assignment)
+        // Process tenantIds array (explicit reassignment)
         await userTenantRepo.delete({ userId: id });
 
         if (tenantIdsToProcess.length > 0) {
@@ -242,6 +253,14 @@ export class UsersService {
           if (!existing) {
             await userTenantRepo.insert({ userId: id, tenantId: dto.tenantId });
           }
+        }
+      } else if (user.tenantId) {
+        // No tenant change requested — repair orphaned junction entry if missing
+        const existing = await userTenantRepo.findOne({
+          where: { userId: id, tenantId: user.tenantId },
+        });
+        if (!existing) {
+          await userTenantRepo.insert({ userId: id, tenantId: user.tenantId });
         }
       }
 
