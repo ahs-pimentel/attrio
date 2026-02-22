@@ -150,9 +150,38 @@ export enum ParticipantApprovalStatus {
 // Tipos base
 // ============================================
 
+/** Codigos de erro padronizados da API */
+export enum ErrorCode {
+  // Autenticacao e autorizacao
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+
+  // Recursos
+  NOT_FOUND = 'NOT_FOUND',
+  CONFLICT = 'CONFLICT',
+  ALREADY_EXISTS = 'ALREADY_EXISTS',
+
+  // Validacao
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  INVALID_INPUT = 'INVALID_INPUT',
+
+  // Tenant / contexto
+  TENANT_NOT_FOUND = 'TENANT_NOT_FOUND',
+  TENANT_REQUIRED = 'TENANT_REQUIRED',
+
+  // Negocio
+  INSUFFICIENT_PERMISSIONS = 'INSUFFICIENT_PERMISSIONS',
+  OPERATION_NOT_ALLOWED = 'OPERATION_NOT_ALLOWED',
+
+  // Servidor
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+}
+
 /** Resposta padrao de erro da API */
 export interface ApiError {
-  code: string;
+  code: ErrorCode | string;
   message: string;
   details?: Record<string, unknown>;
   traceId?: string;

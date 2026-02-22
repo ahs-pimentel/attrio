@@ -6,6 +6,7 @@ import { useAuthContext } from '@/components/AuthProvider';
 import { Sidebar } from '@/components/Sidebar';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { TenantSelectorModal } from '@/components/TenantSelectorModal';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function DashboardLayout({
   children,
@@ -40,7 +41,7 @@ export default function DashboardLayout({
       <div className="ml-64 flex flex-col min-h-screen">
         <DashboardHeader />
         <main className="flex-1 p-8">
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
     </div>

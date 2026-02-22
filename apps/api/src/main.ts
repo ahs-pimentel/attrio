@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -13,6 +14,9 @@ async function bootstrap() {
 
   // Prefixo global da API
   app.setGlobalPrefix('api');
+
+  // Filtro global de excecoes — normaliza todas as respostas de erro
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Validacao global com class-validator
   app.useGlobalPipes(

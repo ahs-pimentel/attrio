@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import './globals.css';
 
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
