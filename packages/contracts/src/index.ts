@@ -119,6 +119,23 @@ export enum ReservationStatus {
   CANCELLED = 'CANCELLED',
 }
 
+/** Tipo de transacao financeira */
+export enum TransactionType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+}
+
+/** Categoria de transacao financeira */
+export enum TransactionCategory {
+  COMMON_FEES = 'COMMON_FEES',
+  MAINTENANCE = 'MAINTENANCE',
+  UTILITIES = 'UTILITIES',
+  SALARY = 'SALARY',
+  INSURANCE = 'INSURANCE',
+  RESERVE_FUND = 'RESERVE_FUND',
+  OTHER = 'OTHER',
+}
+
 /** Status de aprovacao do participante (procuracao) */
 export enum ParticipantApprovalStatus {
   /** Participante direto ou aprovado */

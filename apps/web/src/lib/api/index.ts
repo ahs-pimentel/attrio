@@ -100,3 +100,21 @@ export {
   type PlanConfig,
   type TenantSubscriptionSummary,
 } from './subscriptions';
+
+export {
+  financeApi,
+  type TransactionResponse,
+  type FinanceSummary,
+  type FinanceOverview,
+  type CashflowMonth,
+  type CategoryBreakdown,
+  type BudgetResponse,
+  type RecurringResponse,
+  type CreateTransactionDto as CreateTransactionInput,
+  type UpdateTransactionDto as UpdateTransactionInput,
+  type CreateBudgetDto as CreateBudgetInput,
+  type CreateRecurringDto as CreateRecurringInput,
+  type TransactionType,
+  type TransactionCategory,
+  type RecurringFrequency,
+} from './finance';
